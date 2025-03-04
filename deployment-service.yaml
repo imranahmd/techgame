@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: techgame
-          image: imranahmad786/techgame:latest
+          image: imranahmad786/techgame:1.0  # Use a specific version (Ensure it exists on Docker Hub)
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
