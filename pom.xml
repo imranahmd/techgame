@@ -21,7 +21,6 @@
     		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     		<sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
     		<sonar.language>java</sonar.language>
-		
 	</properties>
 
 	<dependencies>
@@ -70,12 +69,6 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
-		<dependency>
-    <groupId>org.jacoco</groupId> 
-    <artifactId>jacoco-maven-plugin</artifactId>
-    <version>0.8.7</version>
-</dependency>
 	</dependencies>
 
 	<build>
@@ -93,31 +86,53 @@
 				</configuration>
 			</plugin>
 
+			<!-- Jacoco Code Coverage -->
 			<plugin>
-    <groupId>org.jacoco</groupId>
-    <artifactId>jacoco-maven-plugin</artifactId>
-    <version>${jacoco.version}</version>
-    <executions>
-        <execution>
-            <id>jacoco-initialize</id>
-            <goals>
-                <goal>prepare-agent</goal>
-            </goals>
-        </execution>
-        <execution>
-            <id>jacoco-site</id>
-            <phase>package</phase>
-            <goals>
-                <goal>report</goal>
-            </goals>
-        </execution>
-    </executions>
-</plugin>
+			    <groupId>org.jacoco</groupId>
+			    <artifactId>jacoco-maven-plugin</artifactId>
+			    <version>${jacoco.version}</version>
+			    <executions>
+			        <execution>
+			            <id>jacoco-initialize</id>
+			            <goals>
+			                <goal>prepare-agent</goal>
+			            </goals>
+			        </execution>
+			        <execution>
+			            <id>jacoco-site</id>
+			            <phase>package</phase>
+			            <goals>
+			                <goal>report</goal>
+			            </goals>
+			        </execution>
+			    </executions>
+			</plugin>
+
+			<!-- OWASP Dependency Check -->
+			<plugin>
+			    <groupId>org.owasp</groupId>
+			    <artifactId>dependency-check-maven</artifactId>
+			    <version>8.4.1</version>
+			    <executions>
+			        <execution>
+			            <id>dependency-check</id>
+			            <phase>verify</phase>
+			            <goals>
+			                <goal>check</goal>
+			            </goals>
+			        </execution>
+			    </executions>
+			    <configuration>
+			        <failBuildOnCVSS>7</failBuildOnCVSS>
+			        <format>ALL</format>
+			        <outputDirectory>${project.build.directory}</outputDirectory>
+			    </configuration>
+			</plugin>
+
 		</plugins>
 	</build>
 
-
- <distributionManagement>
+	<distributionManagement>
         <repository>
             <id>maven-releases</id>
             <url>http://13.233.190.8:8081/repository/maven-releases/</url>
