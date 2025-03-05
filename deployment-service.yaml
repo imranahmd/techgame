@@ -42,4 +42,5 @@ spec:
     - protocol: "TCP"
       port: 80
       targetPort: 8080
-  type: LoadBalancer  # Change to NodePort if running on Minikube or Bare Metal
+  #type: LoadBalancer  # Change to NodePort if running on Minikube or Bare Metal
+  type: NodePort 
