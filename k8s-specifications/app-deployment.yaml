@@ -1,1 +1,22 @@
-
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: techgame-deployment
+  labels:
+    app: techgame
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: techgame
+  template:
+    metadata:
+      labels:
+        app: techgame
+    spec:
+      containers:
+        - name: techgame
+          image: imranahmad786/techgame:latest   # Use a specific version (Ensure it exists on Docker Hub)
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
