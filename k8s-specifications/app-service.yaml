@@ -10,6 +10,6 @@ spec:
   - name: "techgame-service"
     port: 5000
     targetPort: 80
-    nodePort: 31002
+    nodePort: 31005
   selector:
     app: techgame
