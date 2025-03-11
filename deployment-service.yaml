@@ -24,16 +24,33 @@ spec:
 
 ---
 
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: techgame-ssvc
+  labels:
+    app: techgame
+  name: techgame
 spec:
+  type: NodePort
+  ports:
+  - name: "techgame-service"
+    port: 5000
+    targetPort: 80
+    nodePort: 31005
   selector:
     app: techgame
-  ports:
-    - protocol: "TCP"
-      port: 80
-      targetPort: 8080
-  type: LoadBalancer  # Change to NodePort if running on Minikube or Bare Metal
+
+#apiVersion: v1
+#kind: Service
+#metadata:
+  #name: techgame-ssvc
+#spec:
+  #selector:
+    #app: techgame
+  #ports:
+    #- protocol: "TCP"
+     # port: 80
+      #targetPort: 8080
+  #type: LoadBalancer  # Change to NodePort if running on Minikube or Bare Metal
  
