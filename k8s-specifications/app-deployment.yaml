@@ -15,7 +15,7 @@ spec:
         app: techgame
     spec:
       containers:
-      - image: shikhardocker/techgame
+      - image: imranahmad786/techgame:latest
         name: techgame
         ports:
         - containerPort: 8080
