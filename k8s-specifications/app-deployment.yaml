@@ -15,8 +15,8 @@ spec:
         app: techgame
     spec:
       containers:
-        - name: techgame
-          image: imranahmad786/techgame:latest   # Use a specific version (Ensure it exists on Docker Hub)
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
+          - name: techgame
+            image: imranahmad786/techgame:latest
+            imagePullPolicy: Always
+            ports:
+              - containerPort: 5000  # Change from 8080 to 5000
