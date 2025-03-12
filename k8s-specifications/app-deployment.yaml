@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: techgame-deployment
   labels:
     app: techgame
+  name: techgame
 spec:
   replicas: 2
   selector:
@@ -15,8 +15,8 @@ spec:
         app: techgame
     spec:
       containers:
-          - name: techgame
-            image: imranahmad786/techgame:latest
-            imagePullPolicy: Always
-            ports:
-              - containerPort: 5000  # Change from 8080 to 5000
+      - image: shikhardocker/techgame:latest
+        name: techgame
+        ports:
+        - containerPort: 8080
+          name: techgame
