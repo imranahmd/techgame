@@ -7,11 +7,10 @@ spec:
     app: techgame
   ports:
     - protocol: TCP
-      port: 5000       # External service port
-      targetPort: 5000  # Must match Deployment
-  type: LoadBalancer
-
-
+      port: 5000        # External service port
+      targetPort: 8080  # Must match Deployment containerPort
+      nodePort: 31482   # Pick a port between 30000-32767
+  type: NodePort
 
 
 
