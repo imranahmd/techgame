@@ -1,37 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
+  labels:
+    app: techgame
   name: techgame
 spec:
+  type: NodePort
+  ports:
+  - name: "techgame-service"
+    port: 5000
+    targetPort: 8080
+    nodePort: 31007
   selector:
     app: techgame
-  ports:
-    - protocol: TCP
-      port: 5000        # External service port
-      targetPort: 8080  # Must match Deployment containerPort
-      nodePort: 31482   # Pick a port between 30000-32767
-  type: NodePort
-
-
-
-
-
-
-
-
-
-#apiVersion: v1
-#kind: Service
-#metadata:
-  #labels:
-    #app: techgame
-  #name: techgame
-#spec:
-  #type: NodePort
-  #ports:
-  #- name: "techgame-service"
-   # port: 5000
-    ##targetPort: 80
-    #nodePort: 31005
-  #selector:
-    #app: techgame
+  
