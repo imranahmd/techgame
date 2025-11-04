@@ -291,3 +291,112 @@ Always use Secrets for DB credentials and API keys (never hardcode them).
 Store Docker images in ECR for better IAM-based access control.
 
 Enable Network Policies if frontend and backend are in separate namespaces.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: production
+  labels:
+    app: backend
+spec:
+  replicas: 3   # Run 3 pods for high availability
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: your-dockerhub-username/backend-app:latest  # Replace with your ECR or DockerHub image
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000  # Port your Node.js app listens on
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-uri
+            - name: PORT
+              value: "5000"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      restartPolicy: Always
+
+1. apiVersion, kind, metadata
+
+Defines that this resource is a Deployment (used to manage Pods and ReplicaSets).
+
+The metadata.name and namespace identify the Deployment in the cluster.
+
+Labels help group related objects (e.g., app: backend).
+
+2. spec.replicas
+
+replicas: 3 ensures high availability — Kubernetes will run 3 Pods of the backend.
+
+3. selector & template
+
+The selector matches the labels on Pods. It ensures only Pods with app: backend belong to this Deployment.
+
+4. containers
+
+name: name of the container.
+
+image: your Docker image (you can use AWS ECR for production images).
+
+ports.containerPort: exposes port 5000 inside the container.
+
+env: environment variables like MONGO_URI (fetched securely from a Kubernetes Secret).
+
+resources: ensures the Pod gets the right CPU and memory limits.
+
+Requests = guaranteed resources
+
+Limits = maximum allowed resources
+
+5. Probes
+
+readinessProbe: ensures traffic is sent only when the app is ready.
+
+livenessProbe: restarts container if health check fails.
+
+Both call /health endpoint on port 5000.
+
+6. restartPolicy
+
+Ensures containers are restarted automatically on failure.
+
+✅ Best Practices for AWS EKS Production:
+
+Use AWS ECR for hosting your Docker images.
+
+Use Kubernetes Secrets for sensitive data (like DB credentials).
+
+Configure Cluster Autoscaler to scale your nodes automatically.
+
+Use Horizontal Pod Autoscaler (HPA) for scaling Pods based on CPU/memory usage.
+
