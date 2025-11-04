@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-backend-svc
+  labels:
+    app: python-backend
+  annotations:
+    # ---- AWS EKS LoadBalancer Settings ----
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"                # NLB = Network Load Balancer (high performance, Layer 4)
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"  # Publicly accessible from the internet
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "HTTP"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/health"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "8000"
+spec:
+  type: LoadBalancer  # Tells EKS to provision an AWS NLB
+  selector:
+    app: python-backend  # Must match the label in your Deployment
+  ports:
+    - name: http
+      port: 80           # External port users access (e.g., http://NLB:80)
+      targetPort: 8000   # Port inside your Python container
+      protocol: TCP
+===================================
+Section-by-Section Explanation
+1. apiVersion: v1
+
+This specifies the Kubernetes API version used to create the Service object.
+
+v1 is the stable API version for all basic Kubernetes resources (Pods, Services, ConfigMaps, Secrets, etc.).
+
+✅ Means this Service follows the Kubernetes core resource specifications.
+
+2. kind: Service
+
+Defines the type of Kubernetes object you’re creating.
+
+A Service provides a stable network endpoint and internal/external access to your Pods.
+
+✅ It acts like a virtual load balancer inside (or outside) the cluster.
+
+3. metadata
+
+This block contains identification details about your Service:
+
+Field	Meaning
+name: python-backend-svc	The unique name for this Service within your namespace. You’ll use this to reference it from other resources (e.g., frontend).
+labels.app: python-backend	Labels are key-value pairs that organize and group resources. Here, it helps Kubernetes match the Service to the backend Pods.
+
+✅ Labels are critical for connecting Deployments, Services, and other K8s resources.
+
+4. annotations (AWS Load Balancer configuration)
+
+Annotations are extra metadata that cloud providers like AWS interpret when provisioning infrastructure.
+
+Annotation	Description
+aws-load-balancer-type: "nlb"	Instructs EKS to create a Network Load Balancer (NLB) instead of the default Classic Load Balancer. NLB operates at Layer 4 (TCP), offering low latency and high performance—ideal for backend APIs.
+aws-load-balancer-scheme: "internet-facing"	Makes the NLB publicly accessible via the internet. If you want internal-only traffic (e.g., backend-only app), you’d set this to "internal".
+aws-load-balancer-healthcheck-protocol: "HTTP"	Defines how AWS checks the health of your application—using HTTP requests.
+aws-load-balancer-healthcheck-path: "/health"	Specifies the endpoint AWS will call to check if the app is alive and responding. It should match the /health route defined in your backend (used also in liveness/readiness probes).
+aws-load-balancer-healthcheck-port: "8000"	The port on which AWS sends health checks inside your container.
+
+✅ Annotations are how Kubernetes “talks” to AWS to customize the Load Balancer setup.
+
+5. spec
+
+This is the main configuration section that defines how the Service works.
+
+Field	Description
+type: LoadBalancer	This is the most important line for production. It tells EKS to automatically provision a cloud Load Balancer (in AWS, that means an NLB or ALB depending on annotations). Once deployed, you’ll see it in your AWS Console → EC2 → Load Balancers.
+selector.app: python-backend	This is how the Service “finds” the Pods it should send traffic to. It matches the label from your Deployment’s Pod template (app: python-backend).
+ports	This defines how traffic enters the Service and gets forwarded to the Pods.
+6. ports configuration
+
+This part connects the outside world to your containerized backend.
+
+Field	Description
+name: http	Just a human-readable name for the port (useful for metrics/logging).
+port: 80	The external port on which users (or frontend apps) can reach your backend. The Load Balancer listens here.
+targetPort: 8000	The internal container port your Python backend actually listens on. It maps Load Balancer traffic from port 80 → 8000.
+protocol: TCP	The transport protocol. For most APIs and web apps, it’s TCP.
+
+✅ So if a user hits the NLB DNS name at http://your-nlb-dns:80, traffic goes to your container’s port 8000.
+
+🧠 Example Flow (End-to-End)
+
+You deploy this Service → EKS automatically creates an NLB in AWS.
+
+The NLB receives traffic from the internet on port 80.
+
+The NLB forwards traffic to the Kubernetes Service running in your cluster.
+
+The Service sends that traffic to the correct Pods (the Python backend replicas) on port 8000.
+
+Kubernetes automatically load-balances requests between multiple Pods.
+
+✅ Result:
+Your backend is publicly accessible via a stable AWS NLB URL (something like a1b2c3d4e5f6g7h8.elb.amazonaws.com).
+
+⚙️ Verification Commands
+
+After applying:
+
+kubectl apply -f python-backend-service.yaml
+
+
+Check LoadBalancer status:
+
+kubectl get svc python-backend-svc
+
+
+Expected output:
+
+NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP                            PORT(S)        AGE
+python-backend-svc   LoadBalancer   10.0.123.45    a1b2c3d4e5f6g7h8.elb.amazonaws.com     80:30080/TCP  
+
+http://a1b2c3d4e5f6g7h8.elb.amazonaws.com/
