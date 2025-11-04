@@ -1,1 +1,162 @@
+Dockerfile for Java Backend (Spring Boot Example)
 
+# Stage 1: Build the Java application
+FROM maven:3.8.8-eclipse-temurin-17 AS build
+
+# Set working directory
+WORKDIR /app
+
+# Copy only pom.xml first (to cache dependencies)
+COPY pom.xml .
+
+# Download dependencies
+RUN mvn dependency:go-offline -B
+
+# Copy the entire project
+COPY . .
+
+# Build the application (skipping tests for speed)
+RUN mvn clean package -DskipTests
+
+# Stage 2: Run the application
+FROM openjdk:17-jdk-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy the built jar file from the build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Expose the app port
+EXPOSE 8080
+
+# Run the app
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+
+====================
+Full Breakdown
+🔹 Stage 1 — Build the Java Application
+FROM maven:3.8.8-eclipse-temurin-17 AS build
+
+
+This line chooses a base image with Maven and JDK 17 preinstalled.
+
+Maven is used to compile and package Java code.
+
+AS build means we name this stage build, so we can refer to it later (multi-stage build).
+
+WORKDIR /app
+
+
+Creates (if not present) and sets the working directory inside the container as /app.
+
+All next commands (COPY, RUN, etc.) happen inside /app.
+
+COPY pom.xml .
+
+
+Copies your project’s pom.xml file (Maven configuration) from your local machine to the container’s /app folder.
+
+We copy only pom.xml first to leverage Docker layer caching.
+
+RUN mvn dependency:go-offline -B
+
+
+Downloads all the project dependencies defined in pom.xml without building the project yet.
+
+-B (batch mode) avoids interactive prompts — faster and cleaner builds.
+
+Doing this step early ensures that dependencies are cached; so if only source code changes, Docker won’t re-download dependencies.
+
+COPY . .
+
+
+Copies all your source code (everything in the current folder) into the container’s /app folder.
+
+RUN mvn clean package -DskipTests
+
+
+Cleans old build artifacts and compiles the code.
+
+Packages it into a .jar file inside /app/target/.
+
+-DskipTests skips running unit tests to make the image build faster (common in CI/CD builds).
+
+✅ Result: After this line, you have a compiled JAR file at /app/target/*.jar.
+
+🔹 Stage 2 — Run the Application
+FROM openjdk:17-jdk-slim
+
+
+Uses a lightweight OpenJDK image only for running the app.
+
+This avoids including Maven and build tools in production (which saves ~500MB!).
+
+WORKDIR /app
+
+
+Again, creates /app inside this new (runtime) image.
+
+This is where we’ll keep the final .jar file.
+
+COPY --from=build /app/target/*.jar app.jar
+
+
+Copies the built .jar file from the build stage into this new (runtime) image.
+
+--from=build refers to the first stage we named earlier (AS build).
+
+The JAR file is renamed to app.jar for simplicity.
+
+EXPOSE 8080
+
+
+Exposes port 8080 to the outside world.
+
+This is the port your Spring Boot app listens on (defined in application.properties or default).
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+
+Defines the command that starts the container.
+
+When the container runs, it executes:
+
+java -jar app.jar
+
+
+This starts your Java Spring Boot application.
+
+⚙️ How It Works (Step-by-Step Flow)
+
+Docker pulls Maven image with Java 17.
+
+It downloads dependencies (cached).
+
+It builds the JAR using mvn package.
+
+A new lightweight image is created with just OpenJDK.
+
+The JAR is copied into that clean image.
+
+The container runs java -jar app.jar.
+
+🚀 Build and Run Commands
+# Build image
+docker build -t java-backend .
+
+# Run container
+docker run -d -p 8080:8080 java-backend
+
+
+Now you can open your app in a browser at:
+👉 http://localhost:8080
+
+✅ Advantages of This Dockerfile
+Feature	Benefit
+Multi-stage build	Small final image size
+Dependency caching	Faster rebuilds
+Separate build & run stages	Secure and clean runtime
+OpenJDK slim image	Lightweight and optimized for production
+Port exposed	Ready for K8s LoadBalancer or Ingress
