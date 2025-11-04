@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  labels:
+    app: backend
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"  # Or "external" if using ALB ingress
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 80           # Expose on port 80 (public)
+      targetPort: 8080   # Forward traffic to backend container port
+  type: LoadBalancer
+
+Explanation (Updated for AWS EKS)
+🧩 1️⃣ type: LoadBalancer
+
+Tells Kubernetes to create an AWS Load Balancer (by default, a Network Load Balancer or Classic ELB).
+
+That ELB gets a public IP / DNS name that you can share or connect your frontend to.
+
+Example output after deployment:
+
+kubectl get svc backend-service
+
+
+Result:
+
+NAME              TYPE           CLUSTER-IP     EXTERNAL-IP                         PORT(S)        AGE
+backend-service   LoadBalancer   10.0.123.45    a1234567890abcdef.elb.amazonaws.com 80:32200/TCP   2m
+
+
+The EXTERNAL-IP (like a1234567890abcdef.elb.amazonaws.com) is your public backend endpoint.
+
+Your frontend will call:
+
+http://a1234567890abcdef.elb.amazonaws.com/api/
+
+⚙️ 2️⃣ Port Mapping
+port: 80
+targetPort: 8080
+
+
+port: 80 → Public port on the Load Balancer (standard HTTP)
+
+targetPort: 8080 → Internal port on which your Spring Boot app runs
+
+So, ELB listens on :80 and forwards to :8080 inside the pods.
+
+💡 3️⃣ AWS Annotation
+service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+
+
+Optional but recommended.
+
+Tells EKS which load balancer type to use:
+
+"nlb" → Network Load Balancer (high-performance, stable IPs)
+
+"classic" → Classic ELB (default)
+
+"external" → Use with AWS ALB ingress controller
+
+🔒 4️⃣ Security & Best Practices
+
+Backend service is now publicly exposed — so secure it:
+
+Use HTTPS via AWS ACM certificates + Ingress or ALB.
+
+Restrict inbound access using Security Groups or Network Policies.
+
+Optionally deploy behind an API Gateway for rate-limiting/auth.
+
+⚡ Summary
+Setting	Description
+type: LoadBalancer	Creates AWS Load Balancer for public access
+port: 80	Exposed public port
+targetPort: 8080	Internal container port
+annotation: nlb	Uses AWS Network Load Balancer
+selector: app: backend	Routes traffic to backend pods
+EXTERNAL-IP	Becomes your public backend endpoint
+
+✅ In short:
+
+ClusterIP → Internal-only (microservice-to-microservice)
+
+
+
+
+
+LoadBalancer → External/public access (production on EKS ✅)
