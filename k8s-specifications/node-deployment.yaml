@@ -1,0 +1,293 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: api
+  namespace: three-tier
+  labels: 
+    role: api
+    env: demo
+spec: 
+  replicas: 2
+  strategy: 
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 25%
+  selector: 
+    matchLabels:
+      role: api
+  template:
+    metadata:
+      labels:
+        role: api
+    spec:
+      imagePullSecrets:
+      - name: ecr-registry-secret
+      containers:
+      - name: api
+        image: 407622020962.dkr.ecr.us-east-1.amazonaws.com/backend:latest
+        imagePullPolicy: Always
+        env:
+          - name: MONGO_CONN_STR
+            value: mongodb://mongodb-svc:27017/todo?directConnection=true
+          - name: MONGO_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: mongo-sec
+                key: username
+          - name: MONGO_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongo-sec
+                key: password
+        ports:
+        - containerPort: 3500
+        livenessProbe: 
+          httpGet:
+            path: /ok
+            port: 3500
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /ok
+            port: 3500
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+
+
+
+          ==========================
+          apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: <your-dockerhub-username>/backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-uri
+            - name: PORT
+              value: "5000"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      restartPolicy: Always
+
+
+1️⃣ apiVersion & kind
+apiVersion: apps/v1
+kind: Deployment
+
+
+apiVersion: tells Kubernetes which version of its API to use (apps/v1 is the stable version for Deployments).
+
+kind: defines the type of object you’re creating — here it’s a Deployment, which manages Pods and ensures they’re always running as expected.
+
+2️⃣ metadata
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+
+
+name: gives this deployment a unique name (backend-deployment).
+
+labels: are key-value pairs used for identification — in this case, everything with app: backend can be grouped and targeted by Services or other controllers.
+
+3️⃣ spec (Deployment specification)
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+
+
+replicas: defines how many Pods (copies of your Node.js app) should run.
+→ 2 means EKS will always maintain two running instances of your backend.
+
+selector: tells Kubernetes how to find the Pods this Deployment manages — here it matches all Pods with the label app: backend.
+
+4️⃣ template (Pod definition inside the Deployment)
+template:
+  metadata:
+    labels:
+      app: backend
+
+
+This defines how Pods (the smallest deployable unit) will look.
+
+The labels inside the template must match the selector above (app: backend).
+
+5️⃣ spec.containers
+containers:
+  - name: backend
+    image: <your-dockerhub-username>/backend:latest
+
+
+name: container’s name (appears when you run kubectl get pods).
+
+image: specify the Docker image that contains your backend Node.js code.
+Example: payfitech/backend:prod or 123456789012.dkr.ecr.ap-south-1.amazonaws.com/backend:latest.
+
+🧠 In production on AWS EKS, you typically push your image to Amazon ECR (Elastic Container Registry) and reference it here.
+
+6️⃣ imagePullPolicy
+imagePullPolicy: Always
+
+
+Ensures the image is always pulled fresh from the registry whenever the Pod starts — useful when using :latest tag or frequent updates.
+
+7️⃣ ports
+ports:
+  - containerPort: 5000
+
+
+Exposes port 5000 inside the Pod where your Node.js app is listening.
+(Your app must run on process.env.PORT = 5000).
+
+8️⃣ Environment Variables
+env:
+  - name: NODE_ENV
+    value: "production"
+  - name: MONGO_URI
+    valueFrom:
+      secretKeyRef:
+        name: mongo-secret
+        key: mongo-uri
+  - name: PORT
+    value: "5000"
+
+
+NODE_ENV: tells Node.js to run in production mode.
+
+MONGO_URI: fetched securely from a Kubernetes Secret named mongo-secret, key mongo-uri.
+(We’ll create that secret file later.)
+
+PORT: sets your app’s internal port.
+
+9️⃣ Resource Requests & Limits
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+
+
+requests: minimum guaranteed resources for each Pod.
+
+limits: maximum resources a Pod can use.
+This prevents one Pod from consuming all Node resources in your EKS cluster.
+
+🧠 Example:
+
+250m CPU → 0.25 of a CPU core
+
+512Mi → 512 MB RAM
+
+🔟 Health Checks — Probes
+
+a. Liveness Probe
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 5000
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+
+Kubernetes calls /health on port 5000 every 20 seconds (after waiting 15 seconds).
+
+If your app doesn’t respond (or returns non-2xx), Kubernetes restarts that Pod.
+
+b. Readiness Probe
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 5000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+
+Checks if the app is ready to handle traffic.
+
+Until this probe passes, the Pod won’t receive requests from the Service.
+
+🧠 Pro tip:
+Add a simple /health endpoint in your Node.js backend that returns 200 OK:
+
+app.get("/health", (req, res) => res.status(200).send("OK"));
+
+11️⃣ Restart Policy
+restartPolicy: Always
+
+
+Ensures the container automatically restarts if it crashes.
+This is the default for Deployments.
+
+⚙️ In Production on EKS
+
+When you apply this manifest:
+
+kubectl apply -f backend-deployment.yaml
+
+
+EKS will:
+
+Schedule 2 Pods running your backend container.
+
+Automatically restart them if they crash.
+
+Load-balance traffic (via the backend-service.yaml file you’ll use next).
+
+Maintain health checks for zero-downtime updates.
+
+🔐 Security Notes
+
+Always use Secrets for DB credentials and API keys (never hardcode them).
+
+Store Docker images in ECR for better IAM-based access control.
+
+Enable Network Policies if frontend and backend are in separate namespaces.
