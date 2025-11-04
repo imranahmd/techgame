@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    app: redis
+
+==================================
+  
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: redis
+  name: redis
+spec:
+  type: ClusterIP
+  ports:
+  - name: "redis-service"
+    port: 6379
+    targetPort: 6379
+  selector:
+    app: redis
+
+
+
+    🧱 1️⃣ apiVersion: v1
+apiVersion: v1
+
+
+Tells Kubernetes which version of the API to use.
+
+For Services, the correct API version is v1 (it’s stable and part of the core API).
+
+🔖 2️⃣ kind: Service
+kind: Service
+
+
+Specifies the Kubernetes resource type.
+
+A Service provides a network endpoint to access one or more Pods.
+
+It ensures stable networking even if Pods are recreated or rescheduled.
+
+Example:
+
+Your Redis Pod might restart → new Pod, new IP.
+
+But the Service IP/DNS name stays constant — redis — so your app always connects without changes.
+
+🏷️ 3️⃣ metadata
+metadata:
+  name: redis
+  labels:
+    app: redis
+
+
+metadata.name:
+
+The name of the Service (redis).
+
+Inside the cluster, other Pods can access Redis using this name — for example:
+
+redis:6379
+
+
+metadata.labels:
+
+Just like Deployment labels, used for identifying or grouping objects.
+
+Optional, but helps with debugging and organization.
+
+⚙️ 4️⃣ spec
+spec:
+  type: ClusterIP
+
+
+Defines how the Service behaves.
+
+type: ClusterIP →
+
+This is the default Service type.
+
+It makes the Service reachable only inside the Kubernetes cluster.
+
+Perfect for internal services like databases (e.g., Redis, MySQL).
+
+Other possible types:
+
+NodePort → exposes service on a port on every node (for external access)
+
+LoadBalancer → creates an external load balancer (e.g., AWS, GCP)
+
+ExternalName → maps service name to an external DNS name
+
+For Redis, we use ClusterIP because it’s typically accessed only by internal apps.
+
+🔌 5️⃣ ports
+ports:
+  - port: 6379
+    targetPort: 6379
+
+
+Defines how traffic flows through the Service:
+
+Field	Description
+port	Port on which the Service is exposed inside the cluster. (Other apps use this port to connect.)
+targetPort	Port on which the Pod container is actually listening (inside the Pod).
+
+In this case:
+
+The Service listens on port 6379
+
+It forwards traffic to the Pod’s container port 6379
+
+➡️ So when your backend connects to redis:6379, it actually talks to the Redis container’s port 6379.
+
+🎯 6️⃣ selector
+selector:
+  app: redis
+
+
+This is the bridge between the Service and the Pods.
+
+The Service will automatically route traffic to all Pods with the label app=redis.
+
+That’s why your redis-deployment.yaml also had:
+
+labels:
+  app: redis
+
+
+✅ Matching labels = connection established.
+
+If labels didn’t match, the Service wouldn’t find any Pods, and connections would fail.
+
+🧠 Example internal networking flow
+
+You deployed a Redis Pod with label app=redis.
+
+You deployed this Service with selector app=redis.
+
+Kubernetes automatically links the Service to that Pod.
+
+Other Pods can connect like this:
+
+redis:6379
+
+
+(Kubernetes DNS automatically resolves redis → the internal ClusterIP.)
+
+  
