@@ -1,0 +1,208 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          ports:
+            - containerPort: 3306
+              name: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: rootpassword
+            - name: MYSQL_DATABASE
+              value: mydb
+            - name: MYSQL_USER
+              value: myuser
+            - name: MYSQL_PASSWORD
+              value: mypassword
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+=========================================
+
+
+
+apiVersion: apps/v1
+
+This tells Kubernetes which API version to use.
+
+apps/v1 is used for Deployment resources, which manage Pods and ReplicaSets.
+
+🔹 kind: Deployment
+
+Defines the type of object being created — a Deployment.
+
+Deployments handle updates, scaling, and rollout of application Pods automatically.
+
+🔹 metadata
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+
+
+name: mysql → This is the name of your Deployment (used for identification).
+
+labels: app: mysql → Labels are key–value pairs for grouping and identifying objects.
+The same label will also be used by the Service to find this Pod.
+
+🔹 spec
+
+The spec section describes the desired state of the Deployment.
+
+🧩 replicas: 1
+
+Specifies how many Pod replicas of MySQL should run.
+
+We use 1 because MySQL is a stateful database — multiple instances would require replication setup (handled differently using StatefulSets).
+
+🧩 selector
+selector:
+  matchLabels:
+    app: mysql
+
+
+The selector tells the Deployment which Pods it manages.
+
+It matches Pods with the label app: mysql (the same label in the template below).
+
+🧩 template
+
+This defines the Pod template — what each Pod looks like when created.
+
+template:
+  metadata:
+    labels:
+      app: mysql
+
+
+Each Pod will get the label app: mysql, matching the selector and the Service later.
+
+🧩 spec: (inside template)
+
+This defines what containers should run in the Pod.
+
+🧱 Container Configuration
+containers:
+  - name: mysql
+    image: mysql:8.0
+
+
+name → Name of the container inside the Pod.
+
+image → Docker image used. Here, it’s the official MySQL 8.0 image from Docker Hub.
+
+🔌 Ports
+ports:
+  - containerPort: 3306
+    name: mysql
+
+
+containerPort → The port inside the container where MySQL listens.
+Default MySQL port is 3306.
+
+name → Helps Kubernetes identify this port (useful for Services and monitoring tools).
+
+🔐 Environment Variables
+env:
+  - name: MYSQL_ROOT_PASSWORD
+    value: rootpassword
+  - name: MYSQL_DATABASE
+    value: mydb
+  - name: MYSQL_USER
+    value: myuser
+  - name: MYSQL_PASSWORD
+    value: mypassword
+
+
+These environment variables are used by the MySQL container on startup:
+
+Variable	Purpose
+MYSQL_ROOT_PASSWORD	Sets the root password (admin credentials).
+MYSQL_DATABASE	Creates a default database automatically at container startup.
+MYSQL_USER	Creates a new user.
+MYSQL_PASSWORD	Password for that user.
+
+💡 Note: In production, these values should come from Kubernetes Secrets, not hardcoded plain text.
+
+💾 Volume Mounts
+volumeMounts:
+  - name: mysql-data
+    mountPath: /var/lib/mysql
+
+
+name: mysql-data → Refers to the volume defined below.
+
+mountPath: /var/lib/mysql → Path inside the container where MySQL stores its data.
+This ensures that even if the Pod restarts, data persists because it’s stored on the attached volume.
+
+🧱 Volumes
+volumes:
+  - name: mysql-data
+    persistentVolumeClaim:
+      claimName: mysql-pvc
+
+
+This attaches a Persistent Volume Claim (PVC) to the Pod.
+
+The PVC ensures the Pod gets persistent storage, not temporary (like emptyDir).
+
+💽 PersistentVolumeClaim (PVC)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+
+This creates a request for persistent storage that Kubernetes fulfills using available PersistentVolumes.
+
+Field	Explanation
+accessModes: ReadWriteOnce	Volume can be mounted by only one node in read/write mode — perfect for databases.
+requests.storage: 1Gi	Asks for 1 GiB of disk space for MySQL data.
+
+So, your database data lives on persistent storage and is not lost if the Pod restarts.
+
+⚙️ How It Works in Cluster
+
+The Deployment creates a Pod running MySQL with one replica.
+
+Kubernetes attaches persistent storage (mysql-pvc) to the Pod at /var/lib/mysql.
+
+MySQL starts using the given credentials and initializes the database.
+
+Other applications (like backend or admin apps) connect via a Service on port 3306.
