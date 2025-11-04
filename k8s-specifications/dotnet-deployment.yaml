@@ -1,0 +1,355 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-backend
+  labels:
+    app: dotnet-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dotnet-backend
+  template:
+    metadata:
+      labels:
+        app: dotnet-backend
+    spec:
+      containers:
+        - name: dotnet-backend
+          image: <YOUR_ECR_REPOSITORY>/dotnet-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_URLS
+              value: "http://+:80"
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: dotnet-db-secret
+                  key: connectionstring
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 6
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always
+
+
+Section-by-Section Detailed Explanation
+🏷 1. Basic Metadata
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-backend
+  labels:
+    app: dotnet-backend
+
+
+apiVersion: apps/v1 → Defines this as a Kubernetes Deployment (standard version for all modern clusters including EKS).
+
+kind: Deployment → Declares that this object will manage and update multiple pods in a controlled way.
+
+metadata.name → Unique name of the deployment (dotnet-backend).
+
+labels → Used for grouping and identification (important for service selectors and monitoring).
+
+⚙️ 2. Deployment Specification
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dotnet-backend
+
+
+replicas: 3 → Runs 3 pods (containers) for high availability.
+If one pod dies or the node fails, Kubernetes automatically replaces it.
+
+selector.matchLabels → Ensures the Deployment manages pods labeled with app: dotnet-backend.
+(This must match the labels under template.metadata.labels below.)
+
+🧱 3. Pod Template
+template:
+  metadata:
+    labels:
+      app: dotnet-backend
+
+
+Defines the blueprint for creating each Pod.
+
+The label here is used to link Pods with Services (via selector).
+
+🐳 4. Container Definition
+containers:
+  - name: dotnet-backend
+    image: <YOUR_ECR_REPOSITORY>/dotnet-backend:latest
+    imagePullPolicy: Always
+
+
+name → Logical name for your container.
+
+image → Points to your .NET backend Docker image, stored in AWS ECR (Elastic Container Registry).
+Example: 123456789012.dkr.ecr.ap-south-1.amazonaws.com/dotnet-backend:latest
+
+imagePullPolicy: Always → Ensures Kubernetes always pulls the latest version of your image before running the pod (important for continuous deployment).
+
+🌐 5. Expose Container Port
+ports:
+  - containerPort: 80
+
+
+Exposes port 80 inside the container — where the .NET app listens.
+This will later be linked to your Kubernetes Service (LoadBalancer).
+
+🔐 6. Environment Variables
+env:
+  - name: ASPNETCORE_ENVIRONMENT
+    value: "Production"
+  - name: ASPNETCORE_URLS
+    value: "http://+:80"
+  - name: ConnectionStrings__DefaultConnection
+    valueFrom:
+      secretKeyRef:
+        name: dotnet-db-secret
+        key: connectionstring
+
+
+ASPNETCORE_ENVIRONMENT: Tells .NET to run in Production mode (optimizations, no dev logging).
+
+ASPNETCORE_URLS: Configures Kestrel to listen on all IPs (+) via port 80 inside the container.
+
+ConnectionStrings__DefaultConnection:
+
+Uses secretKeyRef to fetch your database connection string from a Kubernetes Secret (dotnet-db-secret).
+
+The key: connectionstring refers to the specific field inside the Secret.
+
+This avoids hardcoding DB credentials — secure and production-grade.
+
+⚖️ 7. Resource Requests & Limits
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+
+
+Tells Kubernetes the minimum and maximum resources your container can use.
+
+requests → guaranteed amount (scheduler ensures availability)
+
+limits → hard cap (container cannot exceed this)
+
+This helps EKS efficiently manage cluster resources.
+
+❤️ 8. Health Probes
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 80
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 6
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 80
+  initialDelaySeconds: 30
+  periodSeconds: 20
+  failureThreshold: 6
+
+
+Readiness Probe
+
+Checks if the app is ready to serve traffic.
+
+Until it succeeds, the pod won’t receive requests from the Service (prevents downtime during startup).
+
+Liveness Probe
+
+Checks if the container is still running properly.
+
+If it fails repeatedly, Kubernetes restarts the container automatically.
+
+/health endpoint: Your .NET app should expose it (via ASP.NET Health Checks).
+
+🔑 9. Image Pull Secret
+imagePullSecrets:
+  - name: regcred
+
+
+Used when pulling images from a private registry (like AWS ECR or DockerHub).
+
+Create it using:
+
+aws ecr get-login-password --region ap-south-1 | \
+kubectl create secret docker-registry regcred \
+--docker-server=<AWS_ECR_URL> \
+--docker-username=AWS \
+--docker-password-stdin
+
+
+This allows Kubernetes to authenticate with your private image registry.
+
+🔁 10. Restart Policy
+restartPolicy: Always
+
+
+Ensures Kubernetes automatically restarts the container if it crashes or fails.
+
+Default policy for Deployments.
+
+🚀 Summary Table
+Section	Purpose
+metadata	Identifies and labels your deployment
+replicas	Number of Pods for high availability
+selector	Links Deployment to Pods by label
+containers.image	Specifies .NET Docker image location
+env	Passes environment variables and secrets
+resources	Controls resource allocation
+probes	Enables self-healing and graceful startup
+imagePullSecrets	Authenticates private ECR access
+restartPolicy	Keeps app running continuously
+🧠 TL;DR
+
+✅ 3 Pods for HA
+✅ Secure DB credentials (K8s Secrets)
+✅ Auto health monitoring & restart
+✅ ECR-based image pull
+✅ Ready for AWS EKS production workloads
+
+================================================================
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dotnet-db-secret
+type: Opaque
+stringData:
+  connectionstring: "Server=mydb-prod.xxxxx.ap-south-1.rds.amazonaws.com;Database=poolpe_prod;User Id=admin;Password=Admin7654;"
+
+Line-by-Line Explanation
+1️⃣ apiVersion: v1
+
+This means we are using the core API group (v1) of Kubernetes.
+
+The Secret object belongs to this API group — it’s one of the fundamental Kubernetes resource types.
+
+2️⃣ kind: Secret
+
+Specifies that this manifest defines a Secret resource.
+
+Secrets are used to store sensitive information like passwords, tokens, API keys, or connection strings — securely within the cluster.
+
+3️⃣ metadata:
+metadata:
+  name: dotnet-db-secret
+
+
+metadata.name: Gives your secret a unique name inside the namespace.
+
+This name (dotnet-db-secret) will be referenced by your deployment (in env.valueFrom.secretKeyRef) to fetch the data.
+
+Example reference (from your deployment):
+
+env:
+  - name: CONNECTION_STRING
+    valueFrom:
+      secretKeyRef:
+        name: dotnet-db-secret
+        key: connectionstring
+
+4️⃣ type: Opaque
+
+Opaque means this secret contains arbitrary user-defined data (default type for most secrets).
+
+Kubernetes also supports other secret types like:
+
+kubernetes.io/dockerconfigjson (for Docker credentials)
+
+kubernetes.io/tls (for TLS certificates)
+
+But here, Opaque is correct since we’re storing a connection string.
+
+5️⃣ stringData:
+stringData:
+  connectionstring: "Server=mydb-prod.xxxxx.ap-south-1.rds.amazonaws.com;Database=poolpe_prod;User Id=admin;Password=Admin7654;"
+
+
+stringData lets you write secrets in plain text in your YAML for convenience.
+When you apply this file with:
+
+kubectl apply -f dotnet-db-secret.yaml
+
+
+Kubernetes automatically encodes it as Base64 under the hood (into .data field).
+
+The key is connectionstring — this becomes the environment variable name or config key that your deployment will use.
+
+The value is your full database connection string for MySQL or RDS, following the format:
+
+Server=<host>;Database=<dbname>;User Id=<username>;Password=<password>;
+
+🔐 Why use a Secret instead of hardcoding in Deployment?
+
+If you had written:
+
+env:
+  - name: CONNECTION_STRING
+    value: "Server=mydb-prod...;User Id=admin;Password=Admin7654;"
+
+
+That would store plain text credentials in your deployment YAML — not secure at all.
+
+Instead, by using:
+
+valueFrom:
+  secretKeyRef:
+    name: dotnet-db-secret
+    key: connectionstring
+
+
+Your app reads it from a Kubernetes Secret, and you can manage secrets centrally and securely.
+
+🧠 Notes for AWS EKS (Production)
+
+You can also integrate this secret with AWS Secrets Manager using External Secrets Operator if you don’t want to store any credentials directly in Kubernetes.
+
+But for now, this YAML approach is perfect for production-grade deployment if access is controlled properly.
+
+✅ Verify It’s Created:
+
+After applying the secret:
+
+kubectl apply -f dotnet-db-secret.yaml
+
+
+Check it:
+
+kubectl get secrets
+kubectl describe secret dotnet-db-secret
+kubectl get secret dotnet-db-secret -o yaml
+
