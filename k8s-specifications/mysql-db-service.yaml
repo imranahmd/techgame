@@ -170,3 +170,297 @@ It allows internal communication only (ClusterIP).
 It uses label-based routing to connect to the correct Pods.
 
 Clients (like APIs or backends) connect using DNS name instead of Pod IPs.
+
+
+
+=========================================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  replicas: 1  # For production, consider a managed solution like RDS for HA
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-root-password
+        - name: MYSQL_DATABASE
+          value: myappdb
+        - name: MYSQL_USER
+          value: appuser
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-user-password
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+
+
+Detailed Explanation
+
+Let’s break this down section by section:
+
+🔹 apiVersion: apps/v1
+
+Specifies which Kubernetes API version to use.
+
+apps/v1 is the latest stable version for Deployments (used to manage pods declaratively).
+
+🔹 kind: Deployment
+
+Defines this YAML as a Deployment resource.
+
+Deployments are controllers that:
+
+Ensure a specified number of identical pods are running.
+
+Replace or roll back pods during updates (rolling update strategy).
+
+🔹 metadata
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+
+
+name: The unique name of the deployment (mysql).
+
+labels: Key-value pairs used to categorize and identify resources.
+
+Here, app: mysql will be used later by the Service and selectors.
+
+🔹 spec
+spec:
+  replicas: 1
+
+
+replicas: 1 means Kubernetes will run one pod of MySQL.
+
+In production, you usually use one instance of MySQL per PVC because it is stateful — concurrent writers would corrupt data otherwise.
+
+For high availability (HA), you’d typically migrate to Amazon RDS or Aurora MySQL instead of scaling replicas manually.
+
+🔹 selector and template
+selector:
+  matchLabels:
+    app: mysql
+template:
+  metadata:
+    labels:
+      app: mysql
+
+
+The selector tells the Deployment which pods to manage — any pod with label app: mysql.
+
+The template defines how new pods should be created (metadata + spec).
+
+The labels inside template must match the selector.
+
+🔹 spec.containers
+containers:
+- name: mysql
+  image: mysql:8.0
+
+
+name: Logical name of the container (mysql).
+
+image: Specifies the Docker image to use — here, the official MySQL version 8.0 image from Docker Hub.
+
+On AWS EKS, Kubernetes pulls this image via the cluster’s worker node (EC2 instance) internet access.
+
+You can also mirror the image to Amazon ECR for faster private access.
+
+🔹 ports
+ports:
+- containerPort: 3306
+
+
+Exposes port 3306, the default MySQL TCP port.
+
+Other pods or services can connect to this port within the cluster.
+
+The corresponding Kubernetes Service will map to this port.
+
+🔹 env
+env:
+- name: MYSQL_ROOT_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: mysql-secret
+      key: mysql-root-password
+- name: MYSQL_DATABASE
+  value: myappdb
+- name: MYSQL_USER
+  value: appuser
+- name: MYSQL_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: mysql-secret
+      key: mysql-user-password
+
+
+Purpose: Defines environment variables used by the MySQL container at startup.
+
+Variable	Description
+MYSQL_ROOT_PASSWORD	Root user password (fetched securely from Kubernetes Secret mysql-secret).
+MYSQL_DATABASE	Automatically creates this database (myappdb) during initialization.
+MYSQL_USER	Creates a new user (appuser).
+MYSQL_PASSWORD	Sets the password for that user (also fetched from mysql-secret).
+
+✅ Best practice:
+Never hardcode passwords or credentials in Deployment files. Always reference a Kubernetes Secret.
+
+🔹 volumeMounts
+volumeMounts:
+- name: mysql-storage
+  mountPath: /var/lib/mysql
+
+
+Mounts a storage volume named mysql-storage into the container.
+
+/var/lib/mysql is the default data directory where MySQL stores all its database files.
+
+This ensures data persists even if the pod restarts.
+
+🔹 volumes
+volumes:
+- name: mysql-storage
+  persistentVolumeClaim:
+    claimName: mysql-pvc
+
+
+Attaches a PersistentVolumeClaim (PVC) named mysql-pvc to this pod.
+
+Kubernetes dynamically provisions an AWS EBS (Elastic Block Store) volume through that PVC.
+
+The data written to /var/lib/mysql is now stored on EBS, which survives pod restarts and rescheduling.
+
+☁️ How It Works in EKS
+
+PVC & StorageClass
+
+When you deploy this, Kubernetes will bind your mysql-pvc (created earlier) to an EBS volume in the same Availability Zone as your node.
+
+Pod Scheduling
+
+The MySQL pod will always be scheduled to a node in the same AZ as its EBS volume.
+
+This is managed automatically if you use the default AWS gp3 StorageClass.
+
+Secrets Handling
+
+Your mysql-secret is stored in Kubernetes and mounted dynamically as environment variables.
+
+Passwords are never stored in plaintext inside the container.
+
+Deployment Control
+
+Kubernetes ensures that exactly one MySQL pod is always running.
+
+If the pod crashes, it will automatically restart and reattach to the same EBS volume.
+
+🧠 Summary Table
+Component	Function
+Deployment	Ensures the MySQL pod is always running and self-healing.
+Container	Runs the MySQL 8.0 instance.
+Environment Variables	Set credentials and initial database configuration.
+Secrets	Securely provide passwords.
+PVC	Binds persistent AWS EBS storage for data durability.
+Port 3306	Default MySQL communication port.
+✅ Production Recommendations (EKS)
+Aspect	Recommendation
+Storage	Use gp3 with volumeBindingMode: WaitForFirstConsumer for zone-aware binding.
+Backup	Automate EBS snapshots using AWS Backup or Velero.
+Security	Limit access via AWS Security Groups or Network Policies.
+Monitoring	Integrate Prometheus MySQL exporter + Grafana dashboards.
+Scalability	For HA and auto backups, use Amazon RDS MySQL or Aurora MySQL instead of running MySQL in pods.
+
+
+
+mysql-pvc.yaml
+
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 20Gi
+
+mysql-service.yaml
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+type: Opaque
+data:
+  mysql-root-password: QWRtaW5AMTIz       # base64 for "Admin@123"
+  mysql-user-password: YXBwdXNlckAxMjM=   # base64 for "appuser@123"
+
+
+echo -n "Admin@123" | base64
+echo -n "appuser@123" | base64
+
+mysql-service.yaml (LoadBalancer for external access)
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"  # Use AWS Network Load Balancer (recommended for databases)
+    service.beta.kubernetes.io/aws-load-balancer-internal: "false"  # Set "true" if you only want internal VPC access
+spec:
+  selector:
+    app: mysql
+  ports:
+  - protocol: TCP
+    port: 3306
+    targetPort: 3306
+  type: LoadBalancer
+
+type: LoadBalancer	Tells EKS to create an AWS-managed load balancer (ELB/NLB).
+aws-load-balancer-type: nlb	Uses Network Load Balancer (faster and better for TCP traffic like MySQL).
+aws-load-balancer-internal: "false"	Makes it publicly accessible. Change to "true" for private/internal VPC access only.
+port: 3306	MySQL default TCP port.
+
+Once deployed, AWS will automatically assign a DNS endpoint (visible under EXTERNAL-IP when you run kubectl get svc).
+You can use this endpoint to connect from tools like MySQL Workbench or another AWS service.
+
+
+
+
+
+
