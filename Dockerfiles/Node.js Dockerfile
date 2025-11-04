@@ -1,1 +1,155 @@
 
+# -------- Stage 1: Build Stage --------
+FROM node:20-alpine AS build
+
+# Set working directory inside the container
+WORKDIR /app
+
+# Copy only package files first (for better caching)
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy all source code into the container
+COPY . .
+
+# -------- Stage 2: Runtime Stage --------
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy node_modules and source code from build stage
+COPY --from=build /app /app
+
+# Expose application port
+EXPOSE 3000
+
+# Define environment variable
+ENV NODE_ENV=production
+
+# Start the Node.js app (change if your start command differs)
+CMD ["npm", "start"]
+
+
+Stage 1 — Build Stage
+FROM node:20-alpine AS build
+
+
+Uses the official Node.js 20 Alpine image, which is lightweight and secure.
+
+AS build names this stage “build” (we’ll use it later to copy built files).
+
+Alpine = ~40MB base image — perfect for production.
+
+WORKDIR /app
+
+
+Sets /app as the working directory inside the container.
+
+All following commands run here.
+
+COPY package*.json ./
+
+
+Copies only package.json and package-lock.json first.
+
+This enables Docker layer caching — so if only source code changes (not dependencies), Docker won’t reinstall packages.
+
+RUN npm ci --only=production
+
+
+Installs only production dependencies (excluding devDependencies).
+
+npm ci ensures a clean, repeatable install using package-lock.json.
+
+It’s faster and more reliable than npm install.
+
+COPY . .
+
+
+Copies your application source code into the container.
+
+✅ After this line, the container has:
+
+Your Node.js code
+
+All dependencies installed
+
+Ready to run the app
+
+🔹 Stage 2 — Runtime Stage
+FROM node:20-alpine
+
+
+Starts a fresh lightweight Node.js image again (no build tools or caches).
+
+Keeps your final production image small and secure.
+
+WORKDIR /app
+
+
+Sets the same working directory /app.
+
+COPY --from=build /app /app
+
+
+Copies the ready-to-run app (including node_modules) from the build stage.
+
+The final image now has everything required to run your Node.js server.
+
+EXPOSE 3000
+
+
+Exposes port 3000, the default port for Node.js apps.
+
+This port will be used in your Kubernetes Service YAML later (for AWS LoadBalancer).
+
+ENV NODE_ENV=production
+
+
+Sets the environment variable NODE_ENV=production inside the container.
+
+Tells Node.js and many libraries to use optimized production behavior.
+
+CMD ["npm", "start"]
+
+
+Defines the command that runs when the container starts.
+
+It executes your start script from package.json, e.g.:
+
+"scripts": {
+  "start": "node server.js"
+}
+
+⚙️ How It Works
+
+Stage 1: Installs dependencies and prepares the code.
+
+Stage 2: Copies the final app into a new clean image.
+
+The app runs on port 3000 using npm start.
+
+Final image size is ~100MB (very small).
+
+🚀 Build and Run Example
+# Build image
+docker build -t node-backend .
+
+# Run container locally
+docker run -d -p 3000:3000 node-backend
+
+
+Access your app at:
+👉 http://localhost:3000
+
+✅ Why This Dockerfile is Production Ready
+Feature	Benefit
+Multi-stage build	Smaller, faster, cleaner image
+Alpine base image	Lightweight (~40MB)
+npm ci	Deterministic dependency install
+NODE_ENV=production	Optimized runtime
+Separate build/runtime stages	Secure and isolated
+Works perfectly with AWS EKS	Ready for Kubernetes deployment
