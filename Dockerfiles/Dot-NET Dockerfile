@@ -1,0 +1,105 @@
+# -------- Stage 1: Build Stage --------
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+# Set working directory
+WORKDIR /src
+
+# Copy the project file (.csproj) first for dependency caching
+COPY *.csproj ./
+
+# Restore dependencies (downloads all required NuGet packages)
+RUN dotnet restore
+
+# Copy the remaining source code
+COPY . ./
+
+# Build the project in Release mode (optimized)
+RUN dotnet publish -c Release -o /app/publish
+
+# -------- Stage 2: Runtime Stage --------
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+
+# Set working directory for the runtime container
+WORKDIR /app
+
+# Copy the build output from the previous stage
+COPY --from=build /app/publish .
+
+# Expose port (adjust according to your app, usually 80 or 8080)
+EXPOSE 8080
+
+# Define the entry point to run the app
+ENTRYPOINT ["dotnet", "YourAppName.dll"]
+
+
+Stage 1: Build Stage
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+Uses Microsoft’s official .NET SDK image (for building, compiling, and publishing code).
+
+The AS build tag names this stage so we can refer to it later.
+
+WORKDIR /src
+
+Sets the working directory where commands will execute.
+
+COPY *.csproj ./
+
+Copies your project file first (before full source code).
+
+This allows Docker to cache dependencies, so you don’t need to re-download packages each time.
+
+RUN dotnet restore
+
+Restores all NuGet dependencies listed in your .csproj.
+
+COPY . ./
+
+Copies the full project source code into the image.
+
+RUN dotnet publish -c Release -o /app/publish
+
+Builds and publishes your app into a folder (/app/publish) optimized for production.
+
+-c Release ensures it’s a production-ready build.
+
+🚀 Stage 2: Runtime Stage
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+
+This smaller runtime image includes only what’s needed to run your app (not build tools).
+
+Makes the final image much smaller and more secure.
+
+WORKDIR /app
+
+Sets working directory in runtime container.
+
+COPY --from=build /app/publish .
+
+Copies the published app from the build stage.
+
+EXPOSE 8080
+
+Exposes port 8080 for container communication.
+
+You can change it to 80 if your app listens on 80.
+
+ENTRYPOINT ["dotnet", "YourAppName.dll"]
+
+Defines how the app starts when the container runs.
+
+Replace YourAppName.dll with your real DLL name (e.g., BackendApp.dll).
+
+💡 Example: For Your Project
+
+If your backend DLL is PoolpeBusinessBackend.dll, the final few lines will look like:
+
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "PoolpeBusinessBackend.dll"]
+
+✅ Summary
+Stage	Base Image	Purpose	Output
+Build	dotnet/sdk:8.0	Compile + Publish app	/app/publish
+Runtime	dotnet/aspnet:8.0	Run app	Container running .dll
