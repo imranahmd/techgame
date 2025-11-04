@@ -1,0 +1,188 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: your-dockerhub-username/java-backend:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://mysql-service:3306/your_database_name
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: password
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: update
+            - name: SERVER_PORT
+              value: "8080"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+      restartPolicy: Always
+
+
+
+Detailed Explanation (Section-by-Section)
+🧩 1️⃣ Basic Deployment Metadata
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+
+
+apiVersion: apps/v1 → Refers to Kubernetes API version for Deployment resources.
+
+kind: Deployment → Specifies this resource creates and manages a deployment (i.e., pod replicas).
+
+metadata.name → Human-readable name (backend-deployment).
+
+labels → Tags to identify the resource, used later by Services, Selectors, etc.
+
+⚙️ 2️⃣ Deployment Specification
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+
+
+replicas: 2 → Ensures two Pods of this backend will always run. (High availability)
+
+selector.matchLabels → The Service and Pod template must share these labels. It connects Pods to this Deployment.
+
+🧠 3️⃣ Pod Template
+template:
+  metadata:
+    labels:
+      app: backend
+
+
+Defines how the Pod inside the deployment should look.
+
+Labels: Must match the selector (app: backend).
+
+📦 4️⃣ Container Specification
+spec:
+  containers:
+    - name: backend
+      image: your-dockerhub-username/java-backend:latest
+      ports:
+        - containerPort: 8080
+
+
+name: backend → Logical name of your container.
+
+image: → Docker image of your Spring Boot backend (stored in DockerHub or ECR).
+
+containerPort: → Internal port where your app runs (Spring Boot defaults to 8080).
+
+💡 In AWS EKS, this image can be pulled from:
+
+Docker Hub
+
+Amazon ECR (preferred for production).
+
+🔐 5️⃣ Environment Variables
+env:
+  - name: SPRING_DATASOURCE_URL
+    value: jdbc:mysql://mysql-service:3306/your_database_name
+
+
+This sets database configuration for your Spring Boot app.
+
+SPRING_DATASOURCE_URL → JDBC connection string to your MySQL service inside the same Kubernetes cluster.
+
+mysql-service is the Kubernetes Service name of your MySQL database.
+
+Port 3306 is MySQL’s default port.
+
+Secure Credentials:
+  - name: SPRING_DATASOURCE_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: mysql-secret
+        key: username
+
+
+valueFrom.secretKeyRef → Pulls sensitive values (username/password) from a Kubernetes Secret called mysql-secret.
+
+⚡ 6️⃣ Probes (Health Checks)
+readinessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 10
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 20
+
+
+readinessProbe → Checks when your app is ready to serve traffic.
+
+livenessProbe → Ensures the app is still alive. If it fails, Kubernetes restarts the container.
+
+🩺 Both probes hit /actuator/health (Spring Boot actuator endpoint).
+
+👉 These improve uptime and auto-recovery in production.
+
+🔁 7️⃣ Restart Policy
+restartPolicy: Always
+
+
+Ensures Kubernetes always restarts the Pod if it crashes.
+
+Default for Deployments — ensures reliability.
+
+☁️ How It Works in AWS EKS
+
+This deployment runs two backend pods inside your EKS cluster.
+
+Each pod connects to the MySQL service inside the cluster.
+
+Kubernetes automatically restarts failed pods.
+
+Health checks ensure zero-downtime restarts.
+
+You can later scale easily:
+
+kubectl scale deployment backend-deployment --replicas=4
+
+
+Pods will be distributed across multiple EC2 worker nodes for redundancy.
