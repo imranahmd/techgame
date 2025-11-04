@@ -1,0 +1,220 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.2-alpine
+          ports:
+            - containerPort: 6379
+              name: redis
+          command: ["redis-server", "--appendonly", "yes"]
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+
+
+
+
+
+
+redis-deployment.yaml (explained)
+apiVersion: apps/v1
+kind: Deployment
+
+
+apiVersion – tells Kubernetes which API to use.
+
+apps/v1 is the stable version for Deployments.
+
+kind – specifies what Kubernetes object this file defines.
+
+Here it’s a Deployment, which manages Pods automatically — ensures desired replica count and restarts crashed Pods.
+
+metadata:
+  name: redis
+  labels:
+    app: redis
+
+
+metadata.name – gives the Deployment a name (redis).
+
+metadata.labels – key-value tags used for identifying and selecting resources.
+
+The label app: redis will be used later by Services to connect to these Pods.
+
+spec:
+  replicas: 1
+
+
+Defines how many Pods should run at all times.
+
+1 means only one Redis instance (suitable for simple setups).
+
+In production (clustered Redis), you might use StatefulSets, not Deployments.
+
+  selector:
+    matchLabels:
+      app: redis
+
+
+The selector matches Pods with the label app: redis.
+
+This ensures the Deployment knows which Pods it manages.
+
+It must exactly match the labels under the Pod template.
+
+  template:
+    metadata:
+      labels:
+        app: redis
+
+
+Defines the Pod template — how each Pod in the Deployment should look.
+
+metadata.labels – again defines the same label app: redis.
+
+This allows other Kubernetes objects (like Services) to find and connect to these Pods.
+
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.2-alpine
+
+
+Inside the Pod, we define containers.
+
+name: identifies the container (must be unique within a Pod).
+
+image: the Docker image to use.
+
+redis:7.2-alpine → latest stable Redis version with a lightweight Alpine base image.
+
+          ports:
+            - containerPort: 6379
+              name: redis
+
+
+containerPort → exposes port 6379 inside the Pod (Redis default port).
+
+name: helpful for referencing the port in Service or network policies.
+
+          command: ["redis-server", "--appendonly", "yes"]
+
+
+Overrides the default container startup command.
+
+Starts the Redis server with Append Only File (AOF) persistence:
+
+This ensures Redis writes every operation to disk (in /data).
+
+Without this, data would be lost if the Pod restarts.
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+
+
+Sets resource management rules:
+
+requests = the minimum resources Kubernetes guarantees for the Pod.
+
+limits = the maximum resources it can use.
+This ensures Redis doesn’t consume too much memory or CPU and affects other apps.
+
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+
+
+Mounts a storage volume inside the container.
+
+/data is where Redis stores its database files.
+
+name: redis-data refers to a volume defined below.
+
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-pvc
+
+
+Defines the volume that the container will use.
+
+Here we use a PersistentVolumeClaim (PVC) named redis-pvc.
+
+This ensures data persists even if the Pod restarts.
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+
+
+This defines the actual PersistentVolumeClaim resource.
+
+It requests a chunk of storage from your cluster’s storage class.
+
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+
+accessModes:
+
+ReadWriteOnce = volume can be mounted as read-write by one node only.
+
+resources.requests.storage:
+
+Requests 1Gi (1 gigabyte) of persistent disk space.
+
+This PVC ensures that Redis data (in /data) remains intact even if:
+
+The Pod restarts,
+
+The node reboots, or
+
+The Deployment is recreated.
