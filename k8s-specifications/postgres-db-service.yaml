@@ -1,0 +1,150 @@
+  apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: db
+  name: db
+spec:
+  type: ClusterIP
+  ports:
+  - name: "db-service"
+    port: 5432
+    targetPort: 5432
+  selector:
+    app: db
+===============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres
+
+  =============================
+
+  Detailed Explanation
+🧠 1. apiVersion: v1
+
+This defines which version of the Kubernetes API is being used to create this object.
+
+For Service, the correct API version is always v1, because it’s a core Kubernetes resource.
+
+🏷️ 2. kind: Service
+
+Specifies the type of Kubernetes object.
+Here, it’s a Service, which provides network access to a set of Pods (in this case, PostgreSQL Pods).
+
+The Service acts as a stable endpoint (IP + DNS name) for your database, even if Pods are restarted or replaced.
+
+Without it, you’d have to manually find and connect to changing Pod IPs.
+
+🪪 3. metadata
+
+Metadata provides identifying information about the resource.
+
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+
+
+name: postgres → This is the name of the Service inside the Kubernetes cluster.
+You can connect to it using this name (e.g., postgres:5432) from other Pods in the same namespace.
+
+labels → Used for organization and for selector matching in Kubernetes.
+Here, the label app: postgres must match the labels of the PostgreSQL Pods defined in your db-deployment.yaml.
+
+⚙️ 4. spec
+
+The spec section defines the configuration details of the Service.
+
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres
+
+🧱 5. type: ClusterIP
+
+Defines how the Service is exposed.
+
+ClusterIP (default) — Exposes the service inside the cluster only (internal network).
+Other Pods can access it via the DNS name postgres, but external users cannot.
+Example:
+
+A backend Pod can connect using postgres:5432.
+
+If you wanted to access PostgreSQL externally, you could change this to:
+
+NodePort (to expose on each node’s IP)
+
+or LoadBalancer (if on a cloud provider like AWS/GCP/Azure)
+
+🔌 6. ports
+
+Specifies which ports the Service exposes.
+
+ports:
+  - port: 5432
+    targetPort: 5432
+
+
+port → Port number exposed by the Service inside the cluster.
+Example: other apps connect to postgres:5432.
+
+targetPort → Port on the Pod container where the actual database is listening.
+PostgreSQL by default listens on 5432.
+
+💡 If your container used a different internal port (say 6000), you could write:
+
+ports:
+  - port: 5432
+    targetPort: 6000
+
+🎯 7. selector
+
+This is the most important field in the Service.
+
+selector:
+  app: postgres
+
+
+The selector tells Kubernetes which Pods belong to this Service.
+
+It matches any Pods that have the label app: postgres (from your db-deployment.yaml).
+
+So, this Service will automatically send traffic to all matching PostgreSQL Pods — and will load balance across them if there are multiple replicas.
+
+🔁 How It Works Together
+
+Your Deployment (db-deployment.yaml) creates Pods with label app: postgres.
+
+Your Service (db-service.yaml) finds those Pods using the selector.
+
+Any Pod inside the cluster that tries to connect to postgres:5432 will automatically be routed to one of those Pods.
+
+🧠 Example Connection
+
+From another Pod (like a backend API):
+
+psql -h postgres -U myuser -d mydb
+
+
+Here:
+
+postgres → resolves to the internal Service DNS.
+
+5432 → default PostgreSQL port.
+
+
+
+  
