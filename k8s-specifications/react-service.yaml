@@ -181,3 +181,131 @@ http://a1b2c3d4e5f6.elb.amazonaws.com
 🎉 Your React app is live on AWS EKS via Load Balancer!
 
 
+=========================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  labels:
+    app: frontend
+spec:
+  type: LoadBalancer
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+apiVersion: v1
+
+This defines that you’re using the core Kubernetes API version v1, which includes built-in resource types like Service, Pod, and ConfigMap.
+
+🧱 kind: Service
+
+This tells Kubernetes that the YAML file defines a Service object — its job is to expose and route traffic to pods (in this case, the frontend pods created by your frontend-deployment.yaml).
+
+🪪 metadata
+metadata:
+  name: frontend-service
+  labels:
+    app: frontend
+
+
+name: Unique name of the Service within the namespace (frontend-service).
+
+labels: Tags used for identifying and grouping related Kubernetes objects (here, all resources related to the frontend app).
+
+🎯 spec.type: LoadBalancer
+
+This is the key setting for AWS EKS production environments.
+
+👉 What it does:
+
+Instructs Kubernetes to provision an AWS Elastic Load Balancer (ELB) automatically.
+
+The ELB will be publicly accessible on the internet.
+
+It forwards external traffic (port 80 on the ELB) to your frontend pods inside the EKS cluster.
+
+💡 In short:
+EKS → AWS Load Balancer Controller → Creates an ELB → Routes internet traffic to your app.
+
+🔍 selector
+selector:
+  app: frontend
+
+
+This connects the Service to the pods labeled with app: frontend — meaning, all traffic to this Service will be sent to those pods (the frontend Deployment).
+
+✅ So it automatically routes traffic to the 3 replicas created in frontend-deployment.yaml.
+
+🌐 ports
+ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 80
+
+
+Let’s break it down:
+
+Field	Description
+name: http	Optional label for the port, useful for clarity.
+protocol: TCP	Most web traffic uses TCP protocol.
+port: 80	The port that the Service (and ELB) will listen on externally.
+targetPort: 80	The internal container port on which your frontend (Nginx) app is running.
+
+So traffic flow looks like this 👇
+🌍 Internet → AWS ELB (port 80) → Frontend Service → Frontend Pods (port 80)
+
+☁️ What Happens in AWS EKS
+
+When you apply this YAML:
+
+kubectl apply -f frontend-service.yaml
+
+
+Kubernetes Service of type LoadBalancer is created.
+
+The AWS Load Balancer Controller detects it and automatically creates an Elastic Load Balancer (ELB) in your AWS account.
+
+AWS assigns:
+
+A public DNS name, e.g.
+a1b2c3d4e5f6.ap-south-1.elb.amazonaws.com
+
+A public IP.
+
+The ELB starts routing incoming traffic on port 80 → to the EKS nodes → to your React frontend pods.
+
+⚡ In Production
+Feature	Description
+Highly Available	ELB routes traffic to multiple frontend pods (replicas) — even across different AZs (Availability Zones).
+Scalable	You can scale pods with kubectl scale and ELB will automatically detect new ones.
+DNS Based	AWS provides a stable DNS name for the frontend (you can map it to your own domain via Route53).
+Secure	You can later attach an SSL certificate (HTTPS) using AWS Certificate Manager (ACM) + annotations.
+💡 Example: Add HTTPS (optional)
+
+If you want HTTPS, you can enhance your service with annotations like:
+
+metadata:
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: <ACM-CERT-ARN>
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: 80
+
+
+That automatically provisions an HTTPS ELB using your certificate from ACM.
+
+🔁 Typical Flow (Production)
+User → ELB DNS (frontend-service) → React App (port 80)
+React → calls Backend API (backend-service LoadBalancer)
+Backend → interacts with Database (MySQL)
+
