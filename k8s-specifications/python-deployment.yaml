@@ -1,0 +1,251 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-backend
+  labels:
+    app: python-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-backend
+  template:
+    metadata:
+      labels:
+        app: python-backend
+    spec:
+      containers:
+        - name: python-backend
+          image: <your-dockerhub-username>/python-backend:latest  # Replace with your actual image
+          ports:
+            - containerPort: 8000  # Django/FastAPI/Flask typically run on 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: python-db-secret
+                  key: db_url
+            - name: ENVIRONMENT
+              value: "production"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 15
+
+=====================================================
+apiVersion & kind
+apiVersion: apps/v1
+kind: Deployment
+
+
+apiVersion: apps/v1 — the stable API version for managing Deployments in Kubernetes.
+
+kind: Deployment — tells Kubernetes that this object defines how to manage pods and replicas for your app.
+
+➡️ Purpose: A Deployment ensures that a desired number of identical pods are always running.
+
+🏷️ 2️⃣ metadata
+metadata:
+  name: python-backend
+  labels:
+    app: python-backend
+
+
+name: gives your deployment a unique identifier inside the namespace.
+
+labels: are key-value pairs used for filtering, selecting, or grouping Kubernetes objects (for example, Services use labels to route traffic to matching pods).
+
+⚙️ 3️⃣ spec.replicas
+replicas: 2
+
+
+This tells Kubernetes to run 2 replicas (pods) of your Python backend.
+
+Ensures high availability — if one pod crashes, another is still running.
+
+✅ You can increase this to scale horizontally (e.g., replicas: 4).
+
+🎯 4️⃣ spec.selector
+selector:
+  matchLabels:
+    app: python-backend
+
+
+Tells Kubernetes which pods belong to this deployment.
+
+Matches pods that have the label app: python-backend.
+
+Ensures your service and deployment connect correctly.
+
+🧱 5️⃣ spec.template
+
+This defines what each pod looks like — its container image, ports, environment variables, etc.
+
+🧾 template.metadata.labels
+metadata:
+  labels:
+    app: python-backend
+
+
+These labels are attached to pods created by the Deployment.
+
+Must match the selector.matchLabels above so services can find these pods.
+
+🐳 6️⃣ spec.template.spec.containers
+
+This defines the actual container running inside each pod.
+
+🧱 Name & Image
+- name: python-backend
+  image: <your-dockerhub-username>/python-backend:latest
+
+
+name: logical name of the container (used internally).
+
+image: the Docker image your Python app is built from (e.g. Django, Flask, FastAPI).
+
+Example:
+
+image: imranahmd/python-backend:prod-v1
+
+
+✅ Make sure the image is pushed to Docker Hub / ECR before deploying.
+
+🔌 Port Mapping
+ports:
+  - containerPort: 8000
+
+
+Defines which port your container listens on.
+
+Most Python backends (Django, Flask, FastAPI) run on port 8000.
+
+➡️ This must match the Service’s targetPort.
+
+🔐 Environment Variables
+env:
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: python-db-secret
+        key: db_url
+  - name: ENVIRONMENT
+    value: "production"
+
+
+DATABASE_URL: Injected from Kubernetes Secret python-db-secret.
+
+It fetches the value of key db_url from the secret.
+
+Keeps sensitive DB credentials secure (not hardcoded in code or YAML).
+
+ENVIRONMENT: A plain environment variable used by your app to identify environment (production / staging / dev).
+
+⚙️ Resource Management
+resources:
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+
+requests: Minimum resources the container is guaranteed to get.
+
+limits: Maximum resources the container can use.
+
+Field	Meaning
+cpu: 200m	Requests 0.2 vCPU (1/5 of a CPU core).
+memory: 256Mi	Requests 256 MB RAM.
+cpu: 500m	Can use up to half of one CPU core.
+memory: 512Mi	Can use up to 512 MB RAM.
+
+✅ This helps Kubernetes schedule pods efficiently across nodes.
+
+💓 Health Checks
+Liveness Probe
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 30
+
+
+Checks if your app is alive.
+
+Sends HTTP GET requests to /health every 30 seconds (after an initial delay of 10s).
+
+If the app doesn’t respond, Kubernetes restarts the container automatically.
+
+➡️ Helps auto-recover stuck or crashed containers.
+
+Readiness Probe
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 15
+
+
+Checks if your app is ready to receive traffic.
+
+Until it passes, the pod is excluded from the service load balancer.
+
+Prevents users from hitting an app that’s still starting up.
+
+➡️ Ensures smooth rolling updates with zero downtime.
+
+🔍 Summary Table
+Section	Purpose
+apiVersion, kind	Defines the resource type (Deployment).
+metadata	Naming and labeling the deployment.
+replicas	Defines how many pods to run for redundancy.
+selector	Matches pods to this deployment.
+template	Blueprint for creating pods.
+containers	Defines your app container (image, ports, env vars).
+resources	Allocates CPU/memory.
+livenessProbe, readinessProbe	Health checks to keep pods stable.
+🧠 How It Works in AWS EKS
+
+When you apply this:
+
+kubectl apply -f python-backend-deployment.yaml
+
+
+Kubernetes will:
+
+Create 2 pods running your Python backend.
+
+Continuously monitor their health.
+
+Restart pods automatically if they fail.
+
+Connect this deployment with your Service (LoadBalancer) to expose it publicly.
+
+===================================================================================
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: python-db-secret
+type: Opaque
+stringData:
+  db_url: "postgresql://admin:Admin7654@mydb-prod.xxxxx.ap-south-1.rds.amazonaws.com:5432/python_prod"
