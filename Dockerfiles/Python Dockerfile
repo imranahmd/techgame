@@ -1,0 +1,181 @@
+# -------- Stage 1: Build Stage --------
+FROM python:3.11-slim AS build
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files first (for caching)
+COPY requirements.txt .
+
+# Install dependencies into a temporary folder
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire project into the container
+COPY . .
+
+# -------- Stage 2: Runtime Stage --------
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependencies and app code from build stage
+COPY --from=build /app /app
+
+# Create a non-root user for security
+RUN useradd -m appuser
+USER appuser
+
+# Expose the port (e.g., FastAPI/Flask/Django)
+EXPOSE 8000
+
+# Environment variable to disable buffering (real-time logs)
+ENV PYTHONUNBUFFERED=1
+
+# Default command to start the app
+# Flask:    CMD ["python", "app.py"]
+# FastAPI:  CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Django:   CMD ["gunicorn", "--bind", "0.0.0.0:8000", "myproject.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "main:app"]
+
+
+Stage 1 — Build Stage
+FROM python:3.11-slim AS build
+
+
+Uses the official Python 3.11 image, but with the “slim” variant → much smaller (≈120MB).
+
+Labelled as build because we’ll copy results from this stage into the final image.
+
+Ideal for building dependencies in isolation.
+
+WORKDIR /app
+
+
+Sets the working directory to /app inside the container.
+
+All future commands (COPY, RUN, etc.) will happen inside /app.
+
+COPY requirements.txt .
+
+
+Copies only your dependency file (requirements.txt) into the container.
+
+This allows Docker caching — meaning if your dependencies don’t change, Docker won’t reinstall them on every build.
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+Installs your Python dependencies from requirements.txt.
+
+The --no-cache-dir flag ensures pip doesn’t save temporary files (saves space).
+
+After this step, the image has all required Python libraries (Flask, Django, FastAPI, etc.).
+
+COPY . .
+
+
+Copies your entire project codebase (Python files, configs, etc.) into /app.
+
+At this point, your container has:
+
+Your app code
+
+Installed dependencies
+
+Ready for production build
+
+🧩 Stage 2 — Runtime Stage
+FROM python:3.11-slim
+
+
+Starts with a fresh Python 3.11-slim image again (no leftover cache or build tools).
+
+Ensures the final image is clean, lightweight, and secure.
+
+This stage doesn’t contain unnecessary files from the build stage.
+
+WORKDIR /app
+
+
+Sets the same working directory in the runtime container.
+
+COPY --from=build /app /app
+
+
+Copies the final application (built + dependencies) from Stage 1 (build) into this runtime image.
+
+The --from=build syntax tells Docker to pull from the first stage we named “build”.
+
+✅ Result: Final image has only what’s needed to run your app — not build tools or caches.
+
+RUN useradd -m appuser
+USER appuser
+
+
+Creates a non-root user named appuser and switches to it.
+
+Best practice for security — never run your production app as root.
+
+Kubernetes and AWS EKS also recommend non-root containers.
+
+EXPOSE 8000
+
+
+Opens port 8000, which is the typical port for:
+
+Flask apps
+
+FastAPI apps
+
+Django apps (via Gunicorn or Uvicorn)
+
+This tells Kubernetes or Docker that the app inside the container listens on port 8000.
+
+ENV PYTHONUNBUFFERED=1
+
+
+Ensures Python outputs logs in real time (no buffering).
+
+Useful for:
+
+Debugging
+
+Monitoring in Kubernetes (Pod logs appear instantly)
+
+🧠 Start Command (depends on your framework)
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "main:app"]
+
+
+This is the entrypoint command that starts your app.
+
+Gunicorn is a production-grade web server (recommended for Python APIs).
+
+--bind 0.0.0.0:8000 → listens on all network interfaces, port 8000.
+
+"main:app" → assumes your main Python file is main.py and inside it you have:
+
+app = Flask(__name__)
+
+
+or for FastAPI:
+
+app = FastAPI()
+
+
+💡 For other frameworks:
+
+Framework	CMD Example
+Flask	CMD ["python", "app.py"]
+FastAPI (Uvicorn)	CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+Django (Gunicorn)	CMD ["gunicorn", "--bind", "0.0.0.0:8000", "myproject.wsgi:application"]
+🧾 Summary Table
+Part	Purpose	Benefit
+Multi-stage build	Separates build and runtime	Smaller, cleaner image
+python:3.11-slim	Lightweight base	Faster startup & smaller size
+COPY requirements.txt	Cache dependencies	Speeds up rebuilds
+pip install --no-cache-dir	Clean dependency install	No extra files
+Non-root user	Security	Prevent privilege issues
+Gunicorn server	Production-ready	Handles concurrent requests
+Expose port 8000	Networking	Matches K8s service
+PYTHONUNBUFFERED	Real-time logging	Easy debugging on EKS
