@@ -1,0 +1,172 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3306
+      targetPort: 3306
+  selector:
+    app: mysql
+
+
+===================================================
+Detailed Explanation (Step by Step)
+🔹 apiVersion: v1
+
+This defines which version of the Kubernetes API is used.
+
+All core Kubernetes objects (like Pods, Services, ConfigMaps, Secrets, etc.) use apiVersion: v1.
+
+🔹 kind: Service
+
+Specifies the type of resource being created — in this case, a Service.
+
+A Service provides a stable networking endpoint (IP + DNS name) for a group of Pods.
+
+Even if Pods are recreated, replaced, or their IPs change, the Service IP stays the same — ensuring consistent connectivity.
+
+🧩 Think of it like:
+➡ Pods are temporary, but
+➡ Service is permanent (stable access point).
+
+🔹 metadata
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+
+
+name: mysql → The Service’s name in Kubernetes.
+Other Pods can connect to this Service using the DNS name mysql (if in the same namespace).
+
+mysql -h mysql -u myuser -p
+
+
+labels → Labels are identifiers used for organization or by controllers to select resources.
+They also help with debugging and grouping.
+
+🔹 spec
+
+Defines how this Service behaves — which Pods it connects to, which ports it exposes, and what type of Service it is.
+
+🧱 type: ClusterIP
+
+This defines how the Service is exposed.
+
+Type	Description
+ClusterIP (default)	Exposes the Service inside the cluster only. Other Pods can access it, but it’s not reachable from outside.
+NodePort	Exposes the Service on each Node’s IP at a static port (useful for testing or small clusters).
+LoadBalancer	Exposes the Service externally using a cloud load balancer (AWS, GCP, Azure).
+ExternalName	Maps the Service to an external DNS name.
+
+So here, we use ClusterIP — best practice for internal databases like MySQL.
+
+🔒 It ensures the database is only accessible internally, which is secure.
+
+🔹 ports
+ports:
+  - port: 3306
+    targetPort: 3306
+
+
+This defines how traffic is forwarded from the Service to the Pod.
+
+Field	Meaning
+port	Port exposed by the Service inside the cluster (used by clients).
+targetPort	Port inside the Pod/container where the MySQL server is listening.
+
+➡ So when another Pod connects to mysql:3306, Kubernetes routes that traffic to the Pod’s port 3306.
+
+✅ Example:
+
+Frontend Pod → mysql-service → MySQL Pod
+Traffic automatically flows via this mapping.
+
+💡 You can also change these if needed:
+
+ports:
+  - port: 3306        # Exposed to clients
+    targetPort: 3307  # Container actually listens on 3307
+
+🔹 selector
+selector:
+  app: mysql
+
+
+The selector connects the Service to specific Pods.
+
+Kubernetes uses this label match to know which Pods to send traffic to.
+
+➡ Any Pod with labels.app = mysql (from mysql-deployment.yaml) will automatically be part of this Service.
+
+So:
+
+Your Deployment creates Pods labeled app: mysql.
+
+This Service’s selector matches that label.
+
+Traffic to the Service → automatically load-balanced across those Pods (if multiple replicas exist).
+
+⚙️ How It Works in Cluster
+
+Let’s visualize 👇
+
+   +-------------------+
+   |  Service: mysql   |  <-- Stable IP + DNS name (mysql)
+   |  Port: 3306       |
+   +-------------------+
+             |
+   Routes traffic to Pods with label app=mysql
+             |
+   +-----------------------------+
+   |    Pod (MySQL container)    |
+   |  Port: 3306                 |
+   +-----------------------------+
+
+
+You can have multiple MySQL Pods (replicas = 2 or 3).
+The Service will load-balance traffic between them.
+
+If any Pod dies and is recreated, the Service automatically updates its routing.
+
+🧠 Internal DNS
+
+Kubernetes automatically assigns a DNS name to the Service:
+
+<service-name>.<namespace>.svc.cluster.local
+
+
+If your namespace is default, your Service’s DNS will be:
+
+mysql.default.svc.cluster.local
+
+
+Other Pods can simply connect using:
+
+mysql -h mysql -u myuser -p
+
+
+Kubernetes DNS will resolve mysql → internal IP → correct Pod.
+
+🧱 Summary Table
+Section	Purpose
+apiVersion	Defines Kubernetes API version.
+kind: Service	Creates a networking Service object.
+metadata.name	Name of the Service (used in DNS lookup).
+metadata.labels	Identifies Service for grouping.
+spec.type	Defines how it’s exposed (ClusterIP = internal).
+spec.ports	Exposes port 3306 and routes it to the same port inside the Pod.
+spec.selector	Connects the Service to Pods with label app: mysql.
+✅ Key Points
+
+The Service ensures stable access to MySQL even if Pods restart.
+
+It allows internal communication only (ClusterIP).
+
+It uses label-based routing to connect to the correct Pods.
+
+Clients (like APIs or backends) connect using DNS name instead of Pod IPs.
