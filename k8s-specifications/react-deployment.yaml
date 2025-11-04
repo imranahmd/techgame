@@ -1,0 +1,239 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: three-tier
+  labels:
+    role: frontend
+    env: demo
+spec: 
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 25%
+  selector:
+    matchLabels: 
+      role: frontend
+  template:
+    metadata:
+      labels:
+        role: frontend
+    spec: 
+      imagePullSecrets:
+      - name: ecr-registry-secret
+      containers:
+      - name: frontend
+        image: 407622020962.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
+        imagePullPolicy: Always
+        env:
+          - name: REACT_APP_BACKEND_URL
+            value: "http://backend.amanpathakdevops.study/api/tasks"
+        ports:
+        - containerPort: 3000
+
+        ================================================
+        apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: production
+  labels:
+    app: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: <your-dockerhub-username>/frontend:latest   # Example: payfitech/frontend:prod
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: REACT_APP_API_URL
+              value: "http://backend-service.production.svc.cluster.local:5000" 
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+      restartPolicy: Always
+
+
+
+
+Detailed Explanation
+
+Let’s go line by line 👇
+
+🏷️ Metadata Section
+metadata:
+  name: frontend-deployment
+  namespace: production
+  labels:
+    app: frontend
+
+
+name: Gives your deployment a unique name — frontend-deployment.
+
+namespace: Organizes your app within the production namespace (you can change to default if you haven’t created it yet).
+
+labels: A key–value pair (app: frontend) to identify this resource; services use this to find matching pods.
+
+💡 Tip: Always use namespaces like dev, staging, production for isolation in real environments.
+
+⚙️ spec Section
+spec:
+  replicas: 2
+
+
+replicas: Runs 2 pods at all times.
+This gives high availability — if one pod fails or a node restarts, another keeps serving users.
+
+🎯 Pod Selector and Template
+selector:
+  matchLabels:
+    app: frontend
+template:
+  metadata:
+    labels:
+      app: frontend
+
+
+The selector tells Kubernetes which pods this deployment manages.
+Both the Deployment and the Pods have the same label: app: frontend.
+
+⚡ The template defines how each Pod inside the Deployment should look.
+
+🧩 Container Specification
+spec:
+  containers:
+    - name: frontend
+      image: <your-dockerhub-username>/frontend:latest
+      imagePullPolicy: Always
+
+
+name: Container name inside the pod.
+
+image: Your React app Docker image (replace with your image from DockerHub or AWS ECR).
+
+imagePullPolicy: Always — always pulls the latest image when a new pod starts (useful for production CI/CD updates).
+
+🌐 Port Configuration
+ports:
+  - containerPort: 80
+
+
+The container listens on port 80 (Nginx default HTTP port).
+
+The associated Service will forward traffic to this port.
+
+⚙️ Environment Variables
+env:
+  - name: NODE_ENV
+    value: "production"
+  - name: REACT_APP_API_URL
+    value: "http://backend-service.production.svc.cluster.local:5000"
+
+
+NODE_ENV=production: Optimizes your React build and Nginx performance.
+
+REACT_APP_API_URL: The backend service URL inside your cluster.
+This ensures the frontend can communicate with the backend through Kubernetes DNS (backend-service.production.svc.cluster.local).
+
+💡 If you’re using different environments (e.g. staging, dev), you can configure different URLs through ConfigMaps.
+
+🧠 Resource Management
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+
+
+Defines how much compute power your container gets:
+
+Requests = Minimum resources guaranteed for the container.
+
+Limits = Maximum resources the container can use.
+This helps prevent a single pod from consuming too many cluster resources.
+
+🩺 Health Probes
+livenessProbe:
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 20
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 10
+  periodSeconds: 15
+
+
+Liveness Probe: Checks periodically if the app is still running.
+If it fails, Kubernetes automatically restarts the container.
+
+Readiness Probe: Ensures traffic is sent only when the app is fully started.
+
+initialDelaySeconds: Waits before first probe (to let Nginx start).
+
+periodSeconds: How often Kubernetes performs the check.
+
+🧩 React served via Nginx always responds to /, so this probe checks that.
+
+🔁 Restart Policy
+restartPolicy: Always
+
+
+Ensures that pods are automatically restarted if they crash or get evicted.
+
+🧱 What Happens When You Apply It
+
+You apply:
+
+kubectl apply -f frontend-deployment.yaml
+
+
+Kubernetes creates a ReplicaSet and 2 pods based on this spec.
+
+Each pod runs your React + Nginx container, serving the built React app.
+
+Later, your frontend-service.yaml (LoadBalancer) exposes these pods to the internet.
+
+☁️ Production Notes for AWS EKS
+
+✅ Use AWS ALB Ingress Controller for HTTPS & domain support.
+
+✅ Add HPA (HorizontalPodAutoscaler) to scale pods based on CPU/memory.
+
+✅ Store environment variables (like API URLs) in a ConfigMap for easy updates.
