@@ -5,7 +5,7 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: 2
+  replicas: 3  # Run 3 pods for high availability
   selector:
     matchLabels:
       app: backend
@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: your-dockerhub-username/java-backend:latest
+          image: <your-dockerhub-or-ecr-repo>/java-backend:latest
           ports:
             - containerPort: 8080
           env:
@@ -36,6 +36,13 @@ spec:
               value: update
             - name: SERVER_PORT
               value: "8080"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -51,9 +58,8 @@ spec:
       restartPolicy: Always
 
 
-
-Detailed Explanation (Section-by-Section)
-🧩 1️⃣ Basic Deployment Metadata
+Explanation (Production-Optimized Details)
+🧩 1️⃣ apiVersion, kind, metadata
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -62,83 +68,88 @@ metadata:
     app: backend
 
 
-apiVersion: apps/v1 → Refers to Kubernetes API version for Deployment resources.
+Defines a Kubernetes Deployment resource for your Spring Boot backend, named backend-deployment, labeled for easy identification.
 
-kind: Deployment → Specifies this resource creates and manages a deployment (i.e., pod replicas).
-
-metadata.name → Human-readable name (backend-deployment).
-
-labels → Tags to identify the resource, used later by Services, Selectors, etc.
-
-⚙️ 2️⃣ Deployment Specification
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: backend
+⚙️ 2️⃣ Replica Strategy
+replicas: 3
 
 
-replicas: 2 → Ensures two Pods of this backend will always run. (High availability)
+Runs 3 backend pods simultaneously → ensures high availability and load balancing through your LoadBalancer service in AWS EKS.
 
-selector.matchLabels → The Service and Pod template must share these labels. It connects Pods to this Deployment.
+If one pod or node fails, traffic automatically reroutes to others.
 
-🧠 3️⃣ Pod Template
+🎯 3️⃣ Selector and Template
+selector:
+  matchLabels:
+    app: backend
 template:
   metadata:
     labels:
       app: backend
 
 
-Defines how the Pod inside the deployment should look.
+This connects your Service and Deployment — only pods labeled app: backend are managed and load-balanced.
 
-Labels: Must match the selector (app: backend).
-
-📦 4️⃣ Container Specification
-spec:
-  containers:
-    - name: backend
-      image: your-dockerhub-username/java-backend:latest
-      ports:
-        - containerPort: 8080
+📦 4️⃣ Container Configuration
+containers:
+  - name: backend
+    image: <your-dockerhub-or-ecr-repo>/java-backend:latest
 
 
-name: backend → Logical name of your container.
+Replace <your-dockerhub-or-ecr-repo> with your actual image path, e.g.:
 
-image: → Docker image of your Spring Boot backend (stored in DockerHub or ECR).
+docker.io/imranahmd/java-backend:latest
 
-containerPort: → Internal port where your app runs (Spring Boot defaults to 8080).
+or 123456789012.dkr.ecr.ap-south-1.amazonaws.com/java-backend:latest
 
-💡 In AWS EKS, this image can be pulled from:
-
-Docker Hub
-
-Amazon ECR (preferred for production).
+EKS pulls this image automatically if your node IAM role has ECR permissions.
 
 🔐 5️⃣ Environment Variables
+
+These define your Spring Boot application’s database connection.
+
 env:
   - name: SPRING_DATASOURCE_URL
     value: jdbc:mysql://mysql-service:3306/your_database_name
 
 
-This sets database configuration for your Spring Boot app.
+mysql-service → Kubernetes service name for your MySQL DB.
 
-SPRING_DATASOURCE_URL → JDBC connection string to your MySQL service inside the same Kubernetes cluster.
+Uses internal DNS to connect securely within the cluster.
 
-mysql-service is the Kubernetes Service name of your MySQL database.
+The mysql-secret stores credentials:
 
-Port 3306 is MySQL’s default port.
-
-Secure Credentials:
   - name: SPRING_DATASOURCE_USERNAME
     valueFrom:
       secretKeyRef:
         name: mysql-secret
         key: username
+  - name: SPRING_DATASOURCE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: mysql-secret
+        key: password
 
 
-valueFrom.secretKeyRef → Pulls sensitive values (username/password) from a Kubernetes Secret called mysql-secret.
+✅ No hardcoded passwords — Kubernetes Secrets handle this securely.
 
-⚡ 6️⃣ Probes (Health Checks)
+⚡ 6️⃣ Resource Requests and Limits
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+  limits:
+    cpu: "500m"
+    memory: "1Gi"
+
+
+requests → Minimum guaranteed resources the pod will get.
+
+limits → Maximum the pod can consume.
+
+This ensures your backend pods run efficiently and won’t exhaust node resources in production.
+
+🩺 7️⃣ Health Probes
 readinessProbe:
   httpGet:
     path: /actuator/health
@@ -154,35 +165,47 @@ livenessProbe:
   periodSeconds: 20
 
 
-readinessProbe → Checks when your app is ready to serve traffic.
+Uses Spring Boot’s Actuator endpoint for health checks.
 
-livenessProbe → Ensures the app is still alive. If it fails, Kubernetes restarts the container.
+Ensures:
 
-🩺 Both probes hit /actuator/health (Spring Boot actuator endpoint).
+Pods only receive traffic once ready (readiness probe).
 
-👉 These improve uptime and auto-recovery in production.
+Unhealthy pods are restarted automatically (liveness probe).
 
-🔁 7️⃣ Restart Policy
+These keep your application self-healing and stable.
+
+🔁 8️⃣ Restart Policy
 restartPolicy: Always
 
 
-Ensures Kubernetes always restarts the Pod if it crashes.
+Ensures the backend container restarts automatically if it crashes or becomes unresponsive.
 
-Default for Deployments — ensures reliability.
+🧠 Summary
+Feature	Description
+replicas: 3	High availability
+env vars	Configures DB via secrets
+probes	Auto health & restart
+resources	Defines pod limits
+LoadBalancer service	Connects external traffic
+AWS ECR ready	Works directly in EKS
+✅ Deployment Commands
 
-☁️ How It Works in AWS EKS
+Once ready:
 
-This deployment runs two backend pods inside your EKS cluster.
-
-Each pod connects to the MySQL service inside the cluster.
-
-Kubernetes automatically restarts failed pods.
-
-Health checks ensure zero-downtime restarts.
-
-You can later scale easily:
-
-kubectl scale deployment backend-deployment --replicas=4
+kubectl apply -f backend-deployment.yaml
+kubectl apply -f backend-service.yaml
 
 
-Pods will be distributed across multiple EC2 worker nodes for redundancy.
+Check rollout:
+
+kubectl get pods
+kubectl get svc
+
+
+You’ll see an external ELB URL (e.g.):
+
+a1b2c3d4e5f6g7.elb.amazonaws.com
+
+
+That’s your public backend endpoint!
