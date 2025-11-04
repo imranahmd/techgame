@@ -237,3 +237,42 @@ Later, your frontend-service.yaml (LoadBalancer) exposes these pods to the inter
 ✅ Add HPA (HorizontalPodAutoscaler) to scale pods based on CPU/memory.
 
 ✅ Store environment variables (like API URLs) in a ConfigMap for easy updates.
+
+for java backend
+==============================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+spec:
+  replicas: 3   # For production high availability
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: your-dockerhub-username/frontend:latest  # Replace with your ECR or DockerHub image
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80  # Nginx/React build usually serves on port 80
+          env:
+            - name: REACT_APP_API_URL
+              value: "http://<BACKEND-LOADBALANCER-DNS>:80"  # Replace with backend service ELB DNS or internal service name
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "400m"
+      imagePullSecrets:
+        - name: regcred  # Only needed if private ECR/DockerHub repo
+
+
