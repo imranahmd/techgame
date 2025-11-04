@@ -1,0 +1,183 @@
+apiVersion: v1
+kind: Service
+metadata: 
+  name: frontend
+  namespace: three-tier
+spec:
+  ports:
+  - port: 3000
+    protocol: TCP
+  type: ClusterIP
+  selector:
+    role: frontend
+
+
+
+    =======================
+
+    apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: production
+  labels:
+    app: frontend
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"  # Use AWS Network Load Balancer
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+spec:
+  type: LoadBalancer
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+      ==============================
+
+
+      Detailed Explanation
+
+We’ll break it down section by section 👇
+
+🏷️ Metadata Section
+metadata:
+  name: frontend-service
+  namespace: production
+  labels:
+    app: frontend
+
+
+name: Identifies your service in the cluster (frontend-service).
+
+namespace: Tells Kubernetes this service belongs to your production environment (same as the frontend deployment).
+
+labels: Key-value pair for organization; helps identify and link this service with your pods.
+
+💡 Kubernetes best practice: use matching namespaces for backend, frontend, and db (like production) to keep things isolated and manageable.
+
+🧩 Annotations (AWS-Specific Magic)
+annotations:
+  service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+  service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+
+
+These are AWS EKS annotations that tell Kubernetes how to configure the Load Balancer in AWS.
+
+Annotation	Description
+aws-load-balancer-type: "nlb"	Creates a Network Load Balancer (NLB) instead of a Classic Load Balancer.
+✅ Ideal for production: low latency, high throughput, static IP support.
+aws-load-balancer-scheme: "internet-facing"	Makes the NLB public — accessible from the internet.
+For internal-only apps (e.g., internal dashboards), use "internal".
+
+⚡ AWS creates this Load Balancer automatically when you apply the YAML.
+You’ll see it appear in your AWS EC2 → Load Balancers dashboard.
+
+⚙️ Spec Section
+spec:
+  type: LoadBalancer
+
+
+type: LoadBalancer — This is key.
+It tells Kubernetes:
+
+“Create an external AWS Load Balancer and connect it to my service.”
+
+When this is deployed:
+
+EKS automatically provisions an NLB in your AWS account.
+
+Assigns a public DNS name (like a1b2c3d4e5f6.elb.amazonaws.com).
+
+Forwards requests from that Load Balancer to your frontend pods.
+
+🔗 You can use this DNS directly or map it to a custom domain (e.g. app.mycompany.com) via Route 53.
+
+🎯 Selector
+selector:
+  app: frontend
+
+
+Connects the Service to the Pods created by your frontend-deployment.yaml.
+
+The selector matches labels (app: frontend).
+
+This means: “Send traffic from the Load Balancer to all pods labeled app=frontend.”
+
+🌐 Ports Configuration
+ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+Field	Description
+protocol: TCP	HTTP traffic runs on TCP protocol.
+port: 80	The external port that clients (users) will access.
+targetPort: 80	The internal container port (from your deployment).
+This is where Nginx in your frontend container listens.
+
+So when a user visits:
+
+http://<AWS-LoadBalancer-DNS>:80
+
+
+→ Kubernetes routes that request
+→ To your frontend pods on port 80 inside the cluster.
+
+⚙️ How It Works in AWS EKS (Step-by-Step)
+
+You run:
+
+kubectl apply -f frontend-service.yaml
+
+
+EKS creates:
+
+A Service object in Kubernetes.
+
+An NLB (Network Load Balancer) in AWS automatically.
+
+AWS assigns:
+
+A Public DNS name (like a1b2c3d4e5f6.elb.amazonaws.com).
+
+Connects that NLB to your worker node ENIs (Elastic Network Interfaces).
+
+Traffic flow:
+
+User → AWS Load Balancer (port 80)
+      → NodePort on EKS node
+      → Frontend Pod (container port 80)
+
+
+Kubernetes keeps everything synced automatically (if pods scale or restart).
+
+🚀 Production Enhancements (Highly Recommended)
+Enhancement	Description
+✅ HTTPS/SSL	Use AWS Load Balancer Controller with ALB + ACM certificate for HTTPS.
+✅ Custom Domain	Add a DNS record in Route 53 → point your domain to Load Balancer DNS.
+✅ Autoscaling	Add HorizontalPodAutoscaler (HPA) for scaling based on CPU/memory usage.
+✅ Monitoring	Use Prometheus + Grafana or CloudWatch to monitor NLB & service metrics.
+✅ Internal Access (optional)	Change "internet-facing" → "internal" if you only want private VPC access.
+🧩 Example Output
+
+After applying:
+
+kubectl get svc -n production
+
+
+You’ll see:
+
+NAME                TYPE           CLUSTER-IP      EXTERNAL-IP
+frontend-service    LoadBalancer   10.100.34.12    a1b2c3d4e5f6.elb.amazonaws.com
+
+
+You can now open in browser:
+
+http://a1b2c3d4e5f6.elb.amazonaws.com
+
+
+🎉 Your React app is live on AWS EKS via Load Balancer!
+
+
