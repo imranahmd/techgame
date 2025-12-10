@@ -117,15 +117,18 @@
 	</build>
 
 
- <distributionManagement>
-        <repository>
-            <id>maven-releases</id>
-            <url>http://13.233.190.8:8081/repository/maven-releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>maven-snapshots</id>
-            <url>http://13.233.190.8:8081/repository/maven-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
+ 
+
+	<distributionManagement>
+    <snapshotRepository>
+        <id>artifactory-snapshots</id>
+        <url>http://13.233.211.43:8082/artifactory/maven-snapshots/</url>
+    </snapshotRepository>
+    <repository>
+        <id>artifactory-releases</id>
+        <url>http://13.233.211.43:8082/artifactory/maven-releases/</url>
+    </repository>
+</distributionManagement>
+
 
 </project>
