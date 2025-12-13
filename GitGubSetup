@@ -1,0 +1,84 @@
+Below is a simple, step-by-step guide for user login in Linux using Git (GitHub/GitLab) — exactly what you need as a DevOps Engineer.
+
+🔹 1. Install Git (if not installed)
+sudo apt update && sudo apt install git -y     # Ubuntu/Debian
+sudo yum install git -y                        # Amazon Linux / RHEL
+
+
+Check:
+
+git --version
+
+🔹 2. Configure Git User (Mandatory)
+
+This sets who you are in Git commits.
+
+git config --global user.name "Imran Ahmad"
+git config --global user.email "imran@example.com"
+
+
+Verify:
+
+git config --list
+
+🔹 3. Login to GitHub from Linux (Recommended Way – SSH)
+✅ Step 1: Generate SSH Key
+ssh-keygen -t ed25519 -C "imran@example.com"
+
+
+Press Enter for default location.
+
+✅ Step 2: Start SSH Agent
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+
+✅ Step 3: Copy SSH Public Key
+cat ~/.ssh/id_ed25519.pub
+
+
+Copy the output.
+
+✅ Step 4: Add SSH Key to GitHub
+
+Go to GitHub → Settings → SSH and GPG keys
+
+Click New SSH Key
+
+Paste the key → Save
+
+✅ Step 5: Test Connection
+ssh -T git@github.com
+
+
+Expected output:
+
+Hi imranahmd! You've successfully authenticated.
+
+
+🎉 GitHub login done
+
+🔹 4. Clone Repo Using SSH
+git clone git@github.com:org-name/repo-name.git
+
+🔹 5. Alternative (HTTPS Login – Token Based)
+Step 1: Generate GitHub Token
+
+GitHub → Settings → Developer settings → Personal Access Token
+
+Step 2: Clone Repo
+git clone https://github.com/org-name/repo-name.git
+
+
+Username → GitHub username
+Password → Paste Token (not GitHub password)
+
+🔹 6. Verify Logged-In User
+git config --global user.name
+git config --global user.email
+
+🔐 Best Practice (DevOps)
+
+✅ Use SSH keys, not passwords
+✅ Use organization repos, not personal
+✅ Enforce branch protection
+✅ Use CI/CD on push
