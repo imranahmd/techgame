@@ -51,3 +51,25 @@ This web application displays lists of board games and their reviews. While anyo
   - username: bugs    |     password: bunny (user role)
   - username: daffy   |     password: duck  (manager role)
 5. You can also sign-up as a new user and customize your role to play with the application! 😊
+
+
+
+
+https://github.com/techworldwithmurali/devops-real-time-projects-bootcamp/tree/main/Tools%20Installation%20Steps/Jfrog%20Artifactory
+
+
+https://github.com/saikiranpi/Mastering-DevSecOps/blob/Master/Day%2033%20Jenkins-Part-1/Jenkinsfile
+
+
+https://github.com/jfrog/jenkins-jfrog-plugin/blob/main/.jfrog-pipelines/pipelines.release.yml
+
+
+https://github.com/devopswithprashant/guide/blob/main/Install/postgresql-install-doc.md
+
+https://github.com/ravdy/DevOps/blob/master/Artifactory/Setup_Artifactory.md
+
+https://github.com/jaiswaladi246/Petclinic/blob/main/Jenkinsfile
+
+https://github.com/ValaxyTech/DevOpsDemos/blob/master/Jenkins/S3_Artifact_for_Jenkins.md
+
+
