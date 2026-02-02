@@ -1,0 +1,419 @@
+
+
+admin
+
+# Build stage - Use Node.js to build the React app
+FROM node:22-alpine
+
+# Install pnpm
+RUN npm install -g pnpm@10.14.0
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json npm-lock.yaml ./
+
+# Install dependencies
+RUN npm install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Build both client and server
+RUN npm run build
+
+# Expose port 3000
+EXPOSE 3000
+
+# Start the application
+
+CMD ["npm", "start"]
+===================================
+
+user
+
+# Build stage - Use Node.js to build the React app
+FROM node:22-alpine
+
+# Install pnpm
+RUN npm install -g pnpm@10.14.0
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json npm-lock.yaml ./
+
+# Install dependencies
+RUN npm install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Build both client and server
+RUN npm run build
+
+# Expose port 3001
+EXPOSE 3001
+
+# Start the application
+CMD ["npm", "start"]
+
+
+=========================================
+backend admin 7003
+backend auth 7001
+backend user 5000
+admin details 7002
+
+
+db config 
+postgrees 
+
+redis
+upsc_feedback
+post
+
+
+
+
+CREATE USER adviosr_user WITH PASSWORD 'Dpc@2026#Pwd'; 
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~
+$ git clone https://openforge.gov.in/plugins/git/upsc-poc/nad-admit-card-api.git
+Cloning into 'nad-admit-card-api'...
+remote: Enumerating objects: 1678, done.
+remote: Counting objects: 100% (1678/1678), done.
+remote: Compressing objects: 100% (1380/1380), done.
+remote: Total 1678 (delta 931), reused 0 (delta 0), pack-reused 0 (from 0)
+Receiving objects: 100% (1678/1678), 488.49 KiB | 2.70 MiB/s, done.
+Resolving deltas: 100% (931/931), done.
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~
+$ cd nad-admit-card-api
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (develop)
+$ ls
+Dockerfile_dev    Dockerfile_prod  readme.md         src_code/
+Dockerfile_local  VERSION.txt      requirements.txt
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (develop)
+$ git checkout Implmenting_new_endpoints_for_making_everything_at_backend_side
+Switched to a new branch 'Implmenting_new_endpoints_for_making_everything_at_backend_side'
+branch 'Implmenting_new_endpoints_for_making_everything_at_backend_side' set up to track 'origin/Implmenting_new_endpoints_for_making_everything_at_backend_side'.
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ ls
+CONFIG_DOCUMENTATION.md    VERSION.txt               readme.md
+Dockerfile_dev             app_version_config.json   requirements.txt
+Dockerfile_local           centres_config.json       scripts/
+Dockerfile_prod            exams_config.json         src_code/
+IMPLEMENTATION_SUMMARY.md  invigilators_config.json  update_config.sh*
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ cat Dockerfile_dev
+# Use the official Python image from the Docker Hub
+FROM python:3.12-slim-bullseye
+#FROM  788384700272.dkr.ecr.ap-south-1.amazonaws.com/code4gov_api_openforge:base
+
+
+# Set environment variables
+#ENV PYTHONDONTWRITEBYTECODE 1
+#ENV PYTHONUNBUFFERED 1
+
+WORKDIR /opt/
+
+# Copy the requirements file into the container
+COPY requirements.txt .
+
+RUN apt-get update && \
+    apt-get install -y gcc libpq-dev vim&& \
+   pip install --upgrade pip && \
+   apt-get remove -y gcc libpq-dev && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+   rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir -r requirements.txt
+RUN mkdir logs
+
+# Copy the rest of the application code and config file into the container
+COPY src_code/. /opt/
+COPY dev_config/.env  /opt/
+COPY dev_config/mongodb.pem /opt/
+
+# Expose port 80 to the outside world
+EXPOSE 80
+
+# Run the application
+# CMD ["python", "main.py"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--timeout-keep-alive", "10000", "--header", "server:NAD"]
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ ls
+CONFIG_DOCUMENTATION.md  Dockerfile_local  IMPLEMENTATION_SUMMARY.md  app_version_config.json  exams_config.json         readme.md         scripts/   update_config.sh*
+Dockerfile_dev           Dockerfile_prod   VERSION.txt                centres_config.json      invigilators_config.json  requirements.txt  src_code/
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ cat Dockerfile_prod
+# Use the official Python image from the Docker Hub
+FROM python:3.12-slim-bullseye
+#FROM  788384700272.dkr.ecr.ap-south-1.amazonaws.com/code4gov_api_openforge:base
+
+
+# Set environment variables
+#ENV PYTHONDONTWRITEBYTECODE 1
+#ENV PYTHONUNBUFFERED 1
+
+WORKDIR /opt/
+
+# Copy the requirements file into the container
+COPY requirements.txt .
+
+RUN apt-get update && \
+    apt-get install -y gcc libpq-dev vim&& \
+    pip install --upgrade pip && \
+    apt-get remove -y gcc libpq-dev && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install -r requirements.txt
+RUN mkdir logs
+
+
+# Copy the rest of the application code and config file into the container
+COPY src_code/. /opt/
+COPY prod_config/.env  /opt/
+COPY prod_config/global-bundle.pem /opt/
+
+
+# Expose port 80 to the outside world
+EXPOSE 80
+
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--timeout-keep-alive", "10000", "--header", "server:NAD"]
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ vi Dockerfile_prod
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git add .
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git commit -m "DockerFile Updated "
+Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: unable to auto-detect email address (got 'imran ahmad@LAPTOP-JUU83T1K.(none)')
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git push
+Everything up-to-date
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ cat Dockerfile_prod
+# Use the official Python image from the Docker Hub
+FROM python:3.12-slim-bullseye
+#FROM  788384700272.dkr.ecr.ap-south-1.amazonaws.com/code4gov_api_openforge:base
+
+
+# Set environment variables
+#ENV PYTHONDONTWRITEBYTECODE 1
+#ENV PYTHONUNBUFFERED 1
+
+WORKDIR /opt/
+
+# Copy the requirements file into the container
+COPY requirements.txt .
+
+RUN apt-get update && \
+    apt-get install -y gcc libpq-dev vim&& \
+    pip install --upgrade pip && \
+    apt-get remove -y gcc libpq-dev && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install -r requirements.txt
+RUN mkdir logs
+
+
+# Copy the rest of the application code and config file into the container
+COPY src_code/. /opt/
+COPY prod_config/.env  /opt/
+COPY prod_config/global-bundle.pem /opt/
+
+
+COPY prod_config/config/app_version_config.json  /opt/
+COPY prod_config/config/centres_config.json  /opt/
+COPY prod_config/config/exams_config.json  /opt/
+COPY prod_config/config/invigilators_config.json  /opt/
+
+
+# Expose port 80 to the outside world
+EXPOSE 80
+
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--timeout-keep-alive", "10000", "--header", "server:NAD"]
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ cat Dockerfile_prod
+# Use the official Python image from the Docker Hub
+FROM python:3.12-slim-bullseye
+#FROM  788384700272.dkr.ecr.ap-south-1.amazonaws.com/code4gov_api_openforge:base
+
+
+# Set environment variables
+#ENV PYTHONDONTWRITEBYTECODE 1
+#ENV PYTHONUNBUFFERED 1
+
+WORKDIR /opt/
+
+# Copy the requirements file into the container
+COPY requirements.txt .
+
+RUN apt-get update && \
+    apt-get install -y gcc libpq-dev vim&& \
+    pip install --upgrade pip && \
+    apt-get remove -y gcc libpq-dev && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install -r requirements.txt
+RUN mkdir logs
+
+
+# Copy the rest of the application code and config file into the container
+COPY src_code/. /opt/
+COPY prod_config/.env  /opt/
+COPY prod_config/global-bundle.pem /opt/
+
+
+COPY prod_config/config/app_version_config.json  /opt/
+COPY prod_config/config/centres_config.json  /opt/
+COPY prod_config/config/exams_config.json  /opt/
+COPY prod_config/config/invigilators_config.json  /opt/
+
+
+# Expose port 80 to the outside world
+EXPOSE 80
+
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--timeout-keep-alive", "10000", "--header", "server:NAD"]
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git add .
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git status
+On branch Implmenting_new_endpoints_for_making_everything_at_backend_side
+Your branch is up to date with 'origin/Implmenting_new_endpoints_for_making_everything_at_backend_side'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        modified:   Dockerfile_prod
+
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git commit -m "Dockerfile update"
+Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: unable to auto-detect email address (got 'imran ahmad@LAPTOP-JUU83T1K.(none)')
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git config
+usage: git config [<options>]
+
+Config file location
+    --global              use global config file
+    --system              use system config file
+    --local               use repository config file
+    --worktree            use per-worktree config file
+    -f, --file <file>     use given config file
+    --blob <blob-id>      read config from given blob object
+
+Action
+    --get                 get value: name [value-pattern]
+    --get-all             get all values: key [value-pattern]
+    --get-regexp          get values for regexp: name-regex [value-pattern]
+    --get-urlmatch        get value specific for the URL: section[.var] URL
+    --replace-all         replace all matching variables: name value [value-pattern]
+    --add                 add a new variable: name value
+    --unset               remove a variable: name [value-pattern]
+    --unset-all           remove all matches: name [value-pattern]
+    --rename-section      rename section: old-name new-name
+    --remove-section      remove a section: name
+    -l, --list            list all
+    --fixed-value         use string equality when comparing values to 'value-pattern'
+    -e, --edit            open an editor
+    --get-color           find the color configured: slot [default]
+    --get-colorbool       find the color setting: slot [stdout-is-tty]
+
+Type
+    -t, --type <type>     value is given this type
+    --bool                value is "true" or "false"
+    --int                 value is decimal number
+    --bool-or-int         value is --bool or --int
+    --bool-or-str         value is --bool or string
+    --path                value is a path (file or directory name)
+    --expiry-date         value is an expiry date
+
+Other
+    -z, --null            terminate values with NUL byte
+    --name-only           show variable names only
+    --includes            respect include directives on lookup
+    --show-origin         show origin of config (file, standard input, blob, command line)
+    --show-scope          show scope of config (worktree, local, global, system, command)
+    --default <value>     with --get, use default value when missing entry
+
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git config user.name "Imran Ahmad"
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git config user.email "imran.ahmad.devops@digitalindia.gov.in"
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git commit -m "Dockerfile update"
+[Implmenting_new_endpoints_for_making_everything_at_backend_side 2238f7d] Dockerfile update
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$ git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 392 bytes | 392.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+To https://openforge.gov.in/plugins/git/upsc-poc/nad-admit-card-api.git
+   381de2e..2238f7d  Implmenting_new_endpoints_for_making_everything_at_backend_side -> Implmenting_new_endpoints_for_making_everything_at_backend_side
+
+imran ahmad@LAPTOP-JUU83T1K MINGW64 ~/nad-admit-card-api (Implmenting_new_endpoints_for_making_everything_at_backend_side)
+$
+
+
+
+
+
+
