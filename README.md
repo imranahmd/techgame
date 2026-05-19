@@ -73,3 +73,107 @@ https://github.com/jaiswaladi246/Petclinic/blob/main/Jenkinsfile
 https://github.com/ValaxyTech/DevOpsDemos/blob/master/Jenkins/S3_Artifact_for_Jenkins.md
 
 
+pipeline {
+    agent any
+
+    environment {
+        EFS_PATH = "/mnt/upsc-wp-dev/upsc-website-backend"
+        GIT_CREDENTIALS_ID = "8f0ed0e5-d4b8-4919-ab40-5620cf6ec7d1"
+        REPO_URL = "https://openforge.gov.in/plugins/git/upsc-projects/upsc-website-backend.git"
+        RUNTIME_PATH = "/opt/upsc-website-backend"
+    }
+
+    parameters {
+        string(
+            name: 'SOURCE_BRANCH',
+            defaultValue: 'dev',
+            description: 'Source branch to deploy from (dev / uat / main)'
+        )
+    }
+
+    stages {
+
+        stage("Checkout Source Branch") {
+            steps {
+                echo "Checking out ${params.SOURCE_BRANCH} branch..."
+
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "*/${params.SOURCE_BRANCH}"]],
+                    userRemoteConfigs: [[
+                        url: "${REPO_URL}",
+                        credentialsId: "${GIT_CREDENTIALS_ID}"
+                    ]]
+                ])
+            }
+        }
+
+        stage("Create & Push Deployment Branch") {
+            steps {
+
+                script {
+                    env.DEPLOY_BRANCH = "${params.SOURCE_BRANCH}-release-${env.BUILD_NUMBER}"
+                }
+
+                withCredentials([usernamePassword(
+                    credentialsId: "${GIT_CREDENTIALS_ID}",
+                    usernameVariable: 'GIT_USER',
+                    passwordVariable: 'GIT_PASS'
+                )]) {
+
+                    sh '''
+                    git config user.name "$GIT_USER"
+                    git config user.email "$GIT_USER@openforge.gov.in"
+
+                    # create release branch from current checked-out commit
+                    git checkout -B ${DEPLOY_BRANCH}
+
+                    # push branch using credentials
+                    git push https://$GIT_USER:$GIT_PASS@openforge.gov.in/plugins/git/upsc-projects/upsc-website-backend.git ${DEPLOY_BRANCH}
+                    '''
+                }
+            }
+        }
+
+        stage('Sync Code to EFS') {
+            steps {
+                sh '''
+                echo "Syncing code to EFS path: ${EFS_PATH}"
+
+                rsync -avz \
+                  --exclude 'wp-content/uploads/' \
+                  --no-o --no-g \
+                  --omit-dir-times \
+                  ./ ${EFS_PATH}/
+                '''
+            }
+        }
+
+        stage('Copy Runtime Config') {
+            steps {
+                sh '''
+                echo "Copying runtime configs..."
+
+                cp -rvf ${RUNTIME_PATH}/wp-config.php ${EFS_PATH}/wp-config.php
+                cp -rvf ${RUNTIME_PATH}/.htaccess ${EFS_PATH}/.htaccess
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "======================================"
+            echo "SUCCESS: Code deployed from ${params.SOURCE_BRANCH}"
+            echo "Release branch created: ${env.DEPLOY_BRANCH}"
+            echo "======================================"
+        }
+
+        failure {
+            echo "======================================"
+            echo "FAILED: Deployment from ${params.SOURCE_BRANCH}"
+            echo "======================================"
+        }
+    }
+}
+
