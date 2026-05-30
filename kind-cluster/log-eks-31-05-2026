@@ -1,0 +1,2095 @@
+sh-5.2$ sudo su -
+Last login: Sat May 30 19:08:05 UTC 2026 on pts/6
+[root@ip-10-0-3-116 ~]# cd /opt/
+[root@ip-10-0-3-116 opt]# # ingress.yaml
+cat > /opt/learning-eks/dev-config/manifest/ingress.yaml << 'EOF'
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: learning-ingress
+  namespace: learning-eks
+  annotations:
+    kubernetes.io/ingress.class: learning-alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:165286508822:certificate/c9afb5ab-8b5f-413e-90fa-a8cd66ebc5e5
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "30"
+    alb.ingress.kubernetes.io/security-groups: sg-09e0d4273d00cfd22
+
+spec:
+  ingressClassName: learning-alb  rules:
+    - host: node-app.eduupdate.net      http:
+        paths:          - path: /
+            pathType: Prefix            backend:
+              service:                name: node-service-tg
+                port:
+                  number: 3000
+EOF
+[root@ip-10-0-3-116 opt]# ls
+aws  containerd  learning-eks
+[root@ip-10-0-3-116 opt]# cd learning-eks/
+[root@ip-10-0-3-116 learning-eks]# cd
+[root@ip-10-0-3-116 ~]# ls
+aws  awscliv2.zip  eks-cluster-trust.json  eks-node-trust.json  kubectl
+[root@ip-10-0-3-116 ~]# cd /opt/
+[root@ip-10-0-3-116 opt]# cd learning-eks/
+[root@ip-10-0-3-116 learning-eks]# cd dev-config/
+[root@ip-10-0-3-116 dev-config]# ls
+Dockerfile  manifest[root@ip-10-0-3-116 dev-config]# cd manifest/
+[root@ip-10-0-3-116 manifest]# ls
+deployment.yaml  hpa.yaml  ingress.yaml  namespace.yaml  service.yaml
+[root@ip-10-0-3-116 manifest]#
+[root@ip-10-0-3-116 manifest]#
+[root@ip-10-0-3-116 manifest]#
+[root@ip-10-0-3-116 manifest]#
+[root@ip-10-0-3-116 manifest]#
+[root@ip-10-0-3-116 manifest]#
+[root@ip-10-0-3-116 manifest]#
+[root@ip-10-0-3-116 manifest]#
+[root@ip-10-0-3-116 manifest]#
+[root@ip-10-0-3-116 manifest]#
+[root@ip-10-0-3-116 manifest]# cd
+[root@ip-10-0-3-116 ~]# aws eks update-kubeconfig --region us-west-2 --name learning-eks
+kubectl get nodes
+
+aws: [ERROR]: An error occurred (ResourceNotFoundException) when calling the DescribeCluster operation: No cluster found for name: learning-eks.
+
+Additional error details:
+clusterName: learning-eks
+E0530 20:17:34.475608  256148 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com/api?timeout=32s\"
+: dial tcp: lookup F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com on 10.0.0.2:53: no such host"
+E0530 20:17:34.476805  256148 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com/api?timeout=32s\"
+: dial tcp: lookup F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com on 10.0.0.2:53: no such host"
+E0530 20:17:34.478319  256148 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com/api?timeout=32s\"
+: dial tcp: lookup F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com on 10.0.0.2:53: no such host"
+E0530 20:17:34.479640  256148 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com/api?timeout=32s\"
+: dial tcp: lookup F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com on 10.0.0.2:53: no such host"
+E0530 20:17:34.482997  256148 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com/api?timeout=32s\"
+: dial tcp: lookup F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com on 10.0.0.2:53: no such host"
+Unable to connect to the server: dial tcp: lookup F87FE40FC916C3E7A26C82909B46BD5F.sk1.ap-south-1.eks.amazonaws.com on 10.0.0.2:53: no such host
+[root@ip-10-0-3-116 ~]# aws eks update-kubeconfig --region ap-south-1 --name learning-eks
+kubectl get nodes
+Updated context arn:aws:eks:ap-south-1:165286508822:cluster/learning-eks in /root/.kube/config
+NAME                                        STATUS   ROLES    AGE   VERSION
+ip-10-0-3-189.ap-south-1.compute.internal   Ready    <none>   58m   v1.34.8-eks-3385e9b
+ip-10-0-4-168.ap-south-1.compute.internal   Ready    <none>   58m   v1.34.8-eks-3385e9b
+[root@ip-10-0-3-116 ~]# # Install Helm
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+helm version
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 11929 100 11929   0     0 48896     0  --:--:-- --:--:-- --:--:-- 49090
+Downloading https://get.helm.sh/helm-v3.21.0-linux-amd64.tar.gz
+Verifying checksum... Done.
+Preparing to install helm into /usr/local/bin
+helm installed into /usr/local/bin/helm
+version.BuildInfo{Version:"v3.21.0", GitCommit:"e0878d41b711792be60777fd65ad23a101e6b85f", GitTreeState:"clean", GoVersion:"go1.25.10"}
+[root@ip-10-0-3-116 ~]# curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.6.0/docs/install/iam_policy.json
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  8386 100  8386   0     0 32990     0  --:--:-- --:--:-- --:--:-- 33015
+[root@ip-10-0-3-116 ~]# aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam_policy.json
+{
+    "Policy": {
+        "PolicyName": "AWSLoadBalancerControllerIAMPolicy",
+        "PolicyId": "ANPASM66X7ELOWZLR4ZCE",
+        "Arn": "arn:aws:iam::165286508822:policy/AWSLoadBalancerControllerIAMPolicy",
+        "Path": "/",
+        "DefaultVersionId": "v1",
+        "AttachmentCount": 0,
+        "PermissionsBoundaryUsageCount": 0,
+        "IsAttachable": true,
+        "CreateDate": "2026-05-30T20:20:05+00:00",
+        "UpdateDate": "2026-05-30T20:20:05+00:00"
+    }
+}
+[root@ip-10-0-3-116 ~]# ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+[root@ip-10-0-3-116 ~]# eksctl utils associate-iam-oidc-provider \
+    --cluster learning-eks\
+    --approve \
+    --region ap-south-1
+2026-05-30 20:21:43 [ℹ]  will create IAM Open ID Connect provider for cluster "learning-eks" in "ap-south-1"
+2026-05-30 20:21:43 [✔]  created IAM Open ID Connect provider for cluster "learning-eks" in "ap-south-1"
+[root@ip-10-0-3-116 ~]# eksctl create iamserviceaccount \
+  --cluster=learning-eks \
+  --namespace=kube-system \
+  --name=aws-load-balancer-controller \
+  --attach-policy-arn=arn:aws:iam::165286508822:policy/AWSLoadBalancerControllerIAMPolicy \
+  --override-existing-serviceaccounts \
+  --approve \
+  --region=ap-south-1
+2026-05-30 20:24:12 [ℹ]  1 iamserviceaccount (kube-system/aws-load-balancer-controller) was included (based on the include/exclude rules)
+2026-05-30 20:24:12 [!]  metadata of serviceaccounts that exist in Kubernetes will be updated, as --override-existing-serviceaccounts was set
+2026-05-30 20:24:12 [ℹ]  1 task: {
+    2 sequential sub-tasks: {
+        create IAM role for serviceaccount "kube-system/aws-load-balancer-controller",
+        create serviceaccount "kube-system/aws-load-balancer-controller",
+    } }2026-05-30 20:24:12 [ℹ]  building iamserviceaccount stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-aws-load-balancer-controller"
+2026-05-30 20:24:12 [ℹ]  deploying stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-aws-load-balancer-controller"
+2026-05-30 20:24:12 [ℹ]  waiting for CloudFormation stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-aws-load-balancer-controller"
+2026-05-30 20:24:42 [ℹ]  waiting for CloudFormation stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-aws-load-balancer-controller"
+2026-05-30 20:24:42 [ℹ]  created serviceaccount "kube-system/aws-load-balancer-controller"
+[root@ip-10-0-3-116 ~]# helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+"eks" has been added to your repositories
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "eks" chart repository
+Update Complete. ⎈Happy Helming!⎈
+[root@ip-10-0-3-116 ~]# VPC_ID=$(aws ec2 describe-vpcs \
+    --filters "Name=tag:Name,Values=learning_vpc" \
+    --query 'Vpcs[0].VpcId' \
+    --output text)
+
+echo $VPC_ID
+vpc-039ab55e648461156
+[root@ip-10-0-3-116 ~]# helm install aws-load-balancer-controller \
+    eks/aws-load-balancer-controller \
+    -n kube-system \
+    --set clusterName= learning-eks \
+    --set serviceAccount.create=false \
+    --set serviceAccount.name=aws-load-balancer-controller \
+    --set region=ap-south-1 \
+    --set vpcId=$VPC_ID
+Error: INSTALLATION FAILED: expected at most two arguments, unexpected arguments: learning-eks
+[root@ip-10-0-3-116 ~]# helm install aws-load-balancer-controller \
+  eks/aws-load-balancer-controller \
+  -n kube-system \
+  --set clusterName=learning-eks \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller \
+  --set region=ap-south-1 \
+  --set vpcId=$VPC_ID
+NAME: aws-load-balancer-controller
+LAST DEPLOYED: Sat May 30 20:31:36 2026
+NAMESPACE: kube-system
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+AWS Load Balancer controller installed!
+[root@ip-10-0-3-116 ~]# kubectl get deployment -n kube-system aws-load-balancer-controller
+NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
+aws-load-balancer-controller   2/2     2            2           24s
+[root@ip-10-0-3-116 ~]# kubectl get pods -n kube-system
+NAME                                            READY   STATUS    RESTARTS   AGE
+aws-load-balancer-controller-858887465c-bf47b   1/1     Running   0          50s
+aws-load-balancer-controller-858887465c-n5hzd   1/1     Running   0          50s
+aws-node-ssj5k                                  2/2     Running   0          72m
+aws-node-vpvrm                                  2/2     Running   0          72m
+coredns-66cff8d9f9-7lxfr                        1/1     Running   0          81m
+coredns-66cff8d9f9-cp7vk                        1/1     Running   0          81m
+eks-node-monitoring-agent-5vkvm                 1/1     Running   0          72m
+eks-node-monitoring-agent-cnh6j                 1/1     Running   0          72m
+eks-pod-identity-agent-58jnk                    1/1     Running   0          72m
+eks-pod-identity-agent-dr769                    1/1     Running   0          72m
+kube-proxy-nzmrq                                1/1     Running   0          72m
+kube-proxy-wzq99                                1/1     Running   0          72m
+metrics-server-85769fc6bd-mck5m                 1/1     Running   0          81m
+metrics-server-85769fc6bd-q8psb                 1/1     Running   0          81m
+[root@ip-10-0-3-116 ~]# kubectl get deployment metrics-server -n kube-system
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+metrics-server   2/2     2            2           81m
+[root@ip-10-0-3-116 ~]#
+[root@ip-10-0-3-116 ~]#
+[root@ip-10-0-3-116 ~]#
+[root@ip-10-0-3-116 ~]# cat > cluster-autoscaler-policy.json << 'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": [
+      "autoscaling:DescribeAutoScalingGroups",
+      "autoscaling:DescribeAutoScalingInstances",
+      "autoscaling:DescribeLaunchConfigurations",
+      "autoscaling:DescribeScalingActivities",
+      "autoscaling:DescribeTags",
+      "autoscaling:SetDesiredCapacity",
+      "autoscaling:TerminateInstanceInAutoScalingGroup",
+      "ec2:DescribeLaunchTemplateVersions",
+      "ec2:DescribeInstanceTypes"
+    ],
+    "Resource": "*"
+  }]
+}
+EOF
+[root@ip-10-0-3-116 ~]# aws iam create-policy \
+    --policy-name cluster-autoscaler-policy.json \
+    --policy-document file://cluster-autoscaler-policy.json
+{
+    "Policy": {
+        "PolicyName": "cluster-autoscaler-policy.json",
+        "PolicyId": "ANPASM66X7ELL3R5VNOBW",
+        "Arn": "arn:aws:iam::165286508822:policy/cluster-autoscaler-policy.json",
+        "Path": "/",
+        "DefaultVersionId": "v1",
+        "AttachmentCount": 0,
+        "PermissionsBoundaryUsageCount": 0,
+        "IsAttachable": true,
+        "CreateDate": "2026-05-30T20:49:48+00:00",
+        "UpdateDate": "2026-05-30T20:49:48+00:00"
+    }
+}
+[root@ip-10-0-3-116 ~]# eksctl create iamserviceaccount \
+    --cluster= learning-eks \
+    --namespace=kube-system \
+    --name=cluster-autoscaler \
+    --attach-policy-arn=arn:aws:iam::165286508822:policy/cluster-autoscaler-policy \
+    --override-existing-serviceaccounts \
+    --approve \
+    --region ap-south-1
+Error: --cluster must be set
+[root@ip-10-0-3-116 ~]# eksctl create iamserviceaccount     --cluster=learning-eks     --namespace=kube-system     --name=cluster-autoscaler     --attach-policy-arn=arn:aws:iam::165286508822:policy/cluster-autoscaler-policy     --override-existing-serviceaccounts     --approve     --region ap-south-1
+2026-05-30 20:52:07 [ℹ]  1 existing iamserviceaccount(s) (kube-system/aws-load-balancer-controller) will be excluded
+2026-05-30 20:52:07 [ℹ]  1 iamserviceaccount (kube-system/cluster-autoscaler) was included (based on the include/exclude rules)
+2026-05-30 20:52:07 [!]  metadata of serviceaccounts that exist in Kubernetes will be updated, as --override-existing-serviceaccounts was set
+2026-05-30 20:52:07 [ℹ]  1 task: {
+    2 sequential sub-tasks: {
+        create IAM role for serviceaccount "kube-system/cluster-autoscaler",
+        create serviceaccount "kube-system/cluster-autoscaler",
+    } }2026-05-30 20:52:07 [ℹ]  building iamserviceaccount stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler"
+2026-05-30 20:52:07 [ℹ]  deploying stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler"
+2026-05-30 20:52:07 [ℹ]  waiting for CloudFormation stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler"
+2026-05-30 20:52:37 [ℹ]  waiting for CloudFormation stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler"
+2026-05-30 20:52:37 [ℹ]  1 error(s) occurred and IAM Role stacks haven't been created properly, you may wish to check CloudFormation console
+2026-05-30 20:52:37 [✖]  waiter state transitioned to Failure
+Error: failed to create iamserviceaccount(s)
+[root@ip-10-0-3-116 ~]# aws cloudformation describe-stack-events \
+  --stack-name eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler \
+  --region ap-south-1 \
+  --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`].[LogicalResourceId,ResourceStatusReason]' \
+  --output table
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|                                                                                                                                                                DescribeStackEvents                                                                                                                                 |
++-------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  Role1|  Resource handler returned message: "Policy arn:aws:iam::165286508822:policy/cluster-autoscaler-policy does not exist or is not attachable. (Service: Iam, Status Code: 404, Request ID: ff66f215-791e-4763-8578-6dad06030220) (SDK Attempt Count: 1)" (RequestToken: c1d86fe1-3a75-9213-97ff-898ad59169f4, HandlerErrorCode: NotFound)   |
++-------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+[root@ip-10-0-3-116 ~]# aws iam list-policies \
+  --scope Local \
+  --query "Policies[*].[PolicyName,Arn]" \
+  --output table
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|                                                                                     ListPolicies                                                                                     |
++-------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+|  AWSLambdaBasicExecutionRole-d34fb8e7-4fad-42eb-9fe9-3cf6ba4775d0 |  arn:aws:iam::165286508822:policy/service-role/AWSLambdaBasicExecutionRole-d34fb8e7-4fad-42eb-9fe9-3cf6ba4775d0  |
+|  cluster-autoscaler-policy.json                                   |  arn:aws:iam::165286508822:policy/cluster-autoscaler-policy.json                                                 |
+|  AWSLoadBalancerControllerIAMPolicy                               |  arn:aws:iam::165286508822:policy/AWSLoadBalancerControllerIAMPolicy                                             |
++-------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+[root@ip-10-0-3-116 ~]# aws cloudformation delete-stack \
+  --stack-name eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler \
+  --region ap-south-1
+
+aws cloudformation wait stack-delete-complete \
+  --stack-name eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler \
+  --region ap-south-1
+
+aws: [ERROR]: An error occurred (ValidationError) when calling the DeleteStack operation: Stack [eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler] cannot be deleted while TerminationProtection is enabled
+
+^Z
+[1]+  Stopped                 aws cloudformation wait stack-delete-complete --stack-name eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler --region ap-south-1
+[root@ip-10-0-3-116 ~]# aws cloudformation wait stack-delete-complete   --stack-name eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler   --region ap-south-1
+^Z
+[2]+  Stopped                 aws cloudformation wait stack-delete-complete --stack-name eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler --region ap-south-1
+[root@ip-10-0-3-116 ~]# aws cloudformation update-termination-protection \
+  --stack-name eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler \
+  --no-enable-termination-protection \
+  --region ap-south-1
+{
+    "StackId": "arn:aws:cloudformation:ap-south-1:165286508822:stack/eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler/6bba50d0-5c69-11f1-88e8-0a704cba4f29"
+}
+[root@ip-10-0-3-116 ~]# aws cloudformation describe-stacks \
+  --stack-name eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler \
+  --region ap-south-1 \
+  --query "Stacks[0].EnableTerminationProtection"
+false
+[root@ip-10-0-3-116 ~]# aws cloudformation delete-stack \
+  --stack-name eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler \
+  --region ap-south-1
+[root@ip-10-0-3-116 ~]# eksctl create iamserviceaccount \
+  --cluster=learning-eks \
+  --namespace=kube-system \
+  --name=cluster-autoscaler \
+  --attach-policy-arn=arn:aws:iam::165286508822:policy/cluster-autoscaler-policy.json \
+  --override-existing-serviceaccounts \
+  --approve \
+  --region ap-south-1
+2026-05-30 21:00:38 [ℹ]  1 existing iamserviceaccount(s) (kube-system/aws-load-balancer-controller) will be excluded
+2026-05-30 21:00:38 [ℹ]  1 iamserviceaccount (kube-system/cluster-autoscaler) was included (based on the include/exclude rules)
+2026-05-30 21:00:38 [!]  metadata of serviceaccounts that exist in Kubernetes will be updated, as --override-existing-serviceaccounts was set
+2026-05-30 21:00:38 [ℹ]  1 task: {
+    2 sequential sub-tasks: {
+        create IAM role for serviceaccount "kube-system/cluster-autoscaler",
+        create serviceaccount "kube-system/cluster-autoscaler",
+    } }2026-05-30 21:00:38 [ℹ]  building iamserviceaccount stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler"
+2026-05-30 21:00:38 [ℹ]  deploying stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler"
+2026-05-30 21:00:39 [ℹ]  waiting for CloudFormation stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler"
+2026-05-30 21:01:09 [ℹ]  waiting for CloudFormation stack "eksctl-learning-eks-addon-iamserviceaccount-kube-system-cluster-autoscaler"
+2026-05-30 21:01:09 [ℹ]  created serviceaccount "kube-system/cluster-autoscaler"
+[root@ip-10-0-3-116 ~]# curl -O https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  5127 100  5127   0     0 20278     0  --:--:-- --:--:-- --:--:-- 20345
+[root@ip-10-0-3-116 ~]# sed -i "s/ learning-eks /dev-upsc/g" cluster-autoscaler-autodiscover.yaml
+[root@ip-10-0-3-116 ~]# sed -i "s/ learning-eks / learning-eks /g" cluster-autoscaler-autodiscover.yaml
+[root@ip-10-0-3-116 ~]# sed -i "s/learning-eks/learning-eks/g" cluster-autoscaler-autodiscover.yaml
+[root@ip-10-0-3-116 ~]# kubectl apply -f cluster-autoscaler-autodiscover.yaml
+Warning: resource serviceaccounts/cluster-autoscaler is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resourcescreated declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
+serviceaccount/cluster-autoscaler configured
+clusterrole.rbac.authorization.k8s.io/cluster-autoscaler created
+role.rbac.authorization.k8s.io/cluster-autoscaler created
+clusterrolebinding.rbac.authorization.k8s.io/cluster-autoscaler created
+rolebinding.rbac.authorization.k8s.io/cluster-autoscaler created
+deployment.apps/cluster-autoscaler created
+[root@ip-10-0-3-116 ~]# kubectl get pods -n kube-system | grep cluster-autoscaler
+cluster-autoscaler-7cfdf44cbc-cmsc4             1/1     Running   0          15s
+[root@ip-10-0-3-116 ~]# aws sts get-caller-identity
+{
+    "UserId": "165286508822",
+    "Account": "165286508822",
+    "Arn": "arn:aws:iam::165286508822:root"
+}
+[root@ip-10-0-3-116 ~]# aws eks list-access-entries \
+  --cluster-name learning-eks \
+  --region ap-south-1
+{
+    "accessEntries": [
+        "arn:aws:iam::165286508822:role/aws-service-role/eks.amazonaws.com/AWSServiceRoleForAmazonEKS",
+        "arn:aws:iam::165286508822:role/learning-eks-node-role",
+        "arn:aws:iam::165286508822:root"
+    ]
+}
+[root@ip-10-0-3-116 ~]# aws eks update-kubeconfig \
+  --name learning-eks \
+  --region ap-south-1
+Updated context arn:aws:eks:ap-south-1:165286508822:cluster/learning-eks in /root/.kube/config
+[root@ip-10-0-3-116 ~]# kubectl get nodes
+NAME                                        STATUS   ROLES    AGE    VERSION
+ip-10-0-3-189.ap-south-1.compute.internal   Ready    <none>   108m   v1.34.8-eks-3385e9b
+ip-10-0-4-168.ap-south-1.compute.internal   Ready    <none>   108m   v1.34.8-eks-3385e9b
+[root@ip-10-0-3-116 ~]# ps -ef | grep jenkins
+root       26839       1  0 May25 ?        00:00:00 sudo journalctl -xeu jenkins.service
+root       26841   26839  0 May25 pts/4    00:00:00 sudo journalctl -xeu jenkins.service
+root       26842   26841  0 May25 pts/4    00:00:00 journalctl -xeu jenkins.service
+root       27427       1  0 May25 ?        00:00:00 sudo systemctl status jenkins
+root       27429   27427  0 May25 pts/5    00:00:00 sudo systemctl status jenkins
+root       27430   27429  0 May25 pts/5    00:00:00 systemctl status jenkins
+root       34518       1  0 May25 ?        00:00:00 sudo systemctl status jenkins
+root       34520   34518  0 May25 pts/2    00:00:00 sudo systemctl status jenkins
+root       34521   34520  0 May25 pts/2    00:00:00 systemctl status jenkins
+jenkins   250675       1  1 18:29 ?        00:02:24 /usr/bin/java -Djava.awt.headless=true -jar /usr/share/java/jenkins.war --webroot=/var/cache/jenkins/war --httpPort=8080
+root      258307  254793  0 21:08 pts/6    00:00:00 grep --color=auto jenkins
+[root@ip-10-0-3-116 ~]# sudo su - jenkins
+[root@ip-10-0-3-116 ~]# whoami
+echo $HOME
+root
+/root
+[root@ip-10-0-3-116 ~]# sudo -u jenkins bash -c '
+whoami
+echo $HOME
+aws sts get-caller-identity
+kubectl get nodes
+'
+jenkins
+/var/lib/jenkins
+{
+    "UserId": "AROASM66X7ELPR7OSPF5O:i-0326ad8769a5b6065",
+    "Account": "165286508822",
+    "Arn": "arn:aws:sts::165286508822:assumed-role/learning-jenkins-role/i-0326ad8769a5b6065"
+}
+E0530 21:10:21.509170  258377 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: the server has asked for the client to provide credentials"
+E0530 21:10:22.472150  258377 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: the server has asked for the client to provide credentials"
+E0530 21:10:23.450027  258377 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: the server has asked for the client to provide credentials"
+E0530 21:10:24.396237  258377 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: the server has asked for the client to provide credentials"
+E0530 21:10:25.352008  258377 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: the server has asked for the client to provide credentials"
+error: You must be logged in to the server (the server has asked for the client to provide credentials)
+[root@ip-10-0-3-116 ~]# aws eks list-access-entries \
+  --cluster-name learning-eks \
+  --region ap-south-1
+{
+    "accessEntries": [
+        "arn:aws:iam::165286508822:role/aws-service-role/eks.amazonaws.com/AWSServiceRoleForAmazonEKS",
+        "arn:aws:iam::165286508822:role/learning-eks-node-role",
+        "arn:aws:iam::165286508822:root"
+    ]
+}
+[root@ip-10-0-3-116 ~]# aws eks create-access-entry \
+  --cluster-name learning-eks \
+  --principal-arn arn:aws:iam::165286508822:role/learning-jenkins-role \
+  --type STANDARD \
+  --region ap-south-1
+{
+    "accessEntry": {
+        "clusterName": "learning-eks",
+        "principalArn": "arn:aws:iam::165286508822:role/learning-jenkins-role",
+        "kubernetesGroups": [],
+        "accessEntryArn": "arn:aws:eks:ap-south-1:165286508822:access-entry/learning-eks/role/165286508822/learning-jenkins-role/d2cf3d5e-ac97-c777-6f85-88467731a581",
+        "createdAt": "2026-05-30T21:14:50.069000+00:00",
+        "modifiedAt": "2026-05-30T21:14:50.069000+00:00",
+        "tags": {},
+        "username": "arn:aws:sts::165286508822:assumed-role/learning-jenkins-role/{{SessionName}}",
+        "type": "STANDARD"
+    }
+}
+[root@ip-10-0-3-116 ~]# aws eks associate-access-policy \
+  --cluster-name learning-eks \
+  --principal-arn arn:aws:iam::165286508822:role/learning-jenkins-role \
+  --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy \
+  --access-scope type=cluster \
+  --region ap-south-1
+{
+    "clusterName": "learning-eks",
+    "principalArn": "arn:aws:iam::165286508822:role/learning-jenkins-role",
+    "associatedAccessPolicy": {
+        "policyArn": "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy",
+        "accessScope": {
+            "type": "cluster",
+            "namespaces": []
+        },
+        "associatedAt": "2026-05-30T21:15:04.989000+00:00",
+        "modifiedAt": "2026-05-30T21:15:04.989000+00:00"
+    }
+}
+[root@ip-10-0-3-116 ~]# aws eks list-access-entries \
+  --cluster-name learning-eks \
+  --region ap-south-1
+{
+    "accessEntries": [
+        "arn:aws:iam::165286508822:role/aws-service-role/eks.amazonaws.com/AWSServiceRoleForAmazonEKS",
+        "arn:aws:iam::165286508822:role/learning-eks-node-role",
+        "arn:aws:iam::165286508822:role/learning-jenkins-role",
+        "arn:aws:iam::165286508822:root"
+    ]
+}
+[root@ip-10-0-3-116 ~]# sudo -u jenkins aws eks update-kubeconfig \
+  --name learning-eks \
+  --region ap-south-1
+
+sudo -u jenkins kubectl get nodes
+Updated context arn:aws:eks:ap-south-1:165286508822:cluster/learning-eks in /var/lib/jenkins/.kube/config
+NAME                                        STATUS   ROLES    AGE    VERSION
+ip-10-0-3-189.ap-south-1.compute.internal   Ready    <none>   115m   v1.34.8-eks-3385e9b
+ip-10-0-4-168.ap-south-1.compute.internal   Ready    <none>   115m   v1.34.8-eks-3385e9b
+[root@ip-10-0-3-116 ~]# cd /opt/
+[root@ip-10-0-3-116 opt]# ls
+aws  containerd  learning-eks
+[root@ip-10-0-3-116 opt]# cd learning-eks/
+[root@ip-10-0-3-116 learning-eks]# ls
+dev-config
+[root@ip-10-0-3-116 learning-eks]# cd dev-config/
+[root@ip-10-0-3-116 dev-config]# ls
+Dockerfile  manifest
+[root@ip-10-0-3-116 dev-config]# cd manifest/
+[root@ip-10-0-3-116 manifest]# ls
+deployment.yaml  hpa.yaml  ingress.yaml  namespace.yaml  service.yaml
+[root@ip-10-0-3-116 manifest]# vi hpa.yaml
+[root@ip-10-0-3-116 manifest]# vi deployment.yaml
+[root@ip-10-0-3-116 manifest]# learning-eks
+-bash: learning-eks: command not found
+[root@ip-10-0-3-116 manifest]# kubectl get pods -n learning-eks
+NAME                    READY   STATUS             RESTARTS      AGE
+node-5f875c9b8c-hlhpd   0/1     CrashLoopBackOff   6 (66s ago)   10m
+node-5f875c9b8c-w4g5n   0/1     Running            7 (56s ago)   10m
+node-7c5fc88c98-l78kh   0/1     Running            3 (53s ago)   4m23s
+[root@ip-10-0-3-116 manifest]# kubectl get pods -n learning-eks
+NAME                    READY   STATUS             RESTARTS       AGE
+node-5f875c9b8c-hlhpd   0/1     CrashLoopBackOff   6 (101s ago)   11m
+node-5f875c9b8c-w4g5n   0/1     CrashLoopBackOff   7 (21s ago)    11m
+node-7c5fc88c98-l78kh   0/1     Running            4 (18s ago)    4m58s
+[root@ip-10-0-3-116 manifest]# kubectl get pods -n learning-eks
+NAME                    READY   STATUS             RESTARTS       AGE
+node-5f875c9b8c-hlhpd   0/1     CrashLoopBackOff   6 (105s ago)   11m
+node-5f875c9b8c-w4g5n   0/1     CrashLoopBackOff   7 (25s ago)    11m
+node-7c5fc88c98-l78kh   0/1     Running            4 (22s ago)    5m2s
+[root@ip-10-0-3-116 manifest]# kubectl describe pod node-5f875c9b8c-hlhpd -n learning-eks
+Name:             node-5f875c9b8c-hlhpd
+Namespace:        learning-eks
+Priority:         0
+Service Account:  default
+Node:             ip-10-0-3-189.ap-south-1.compute.internal/10.0.3.189
+Start Time:       Sat, 30 May 2026 21:18:34 +0000
+Labels:           app=node
+                  pod-template-hash=5f875c9b8c
+Annotations:      <none>
+Status:           Running
+IP:               10.0.3.70
+IPs:
+  IP:           10.0.3.70
+Controlled By:  ReplicaSet/node-5f875c9b8c
+Containers:
+  node-app:
+    Container ID:   containerd://5c651d015ac9c313b8244ffc1a773dfa25464485bc866fb38b67626d458a330b
+    Image:          165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest
+    Image ID:       165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node@sha256:e9dc4fd494f1b0b1afa3c275c29cc8fcca76c2448c6243a24beca1dfd480a832
+    Port:           3000/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       CrashLoopBackOff
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    137
+      Started:      Sat, 30 May 2026 21:27:07 +0000
+      Finished:     Sat, 30 May 2026 21:28:15 +0000
+    Ready:          False
+    Restart Count:  6
+    Limits:
+      cpu:     300m
+      memory:  256Mi
+    Requests:
+      cpu:        100m
+      memory:     128Mi
+    Liveness:     http-get http://:3000/health delay=15s timeout=1s period=10s #success=1 #failure=3
+    Readiness:    http-get http://:3000/health delay=5s timeout=1s period=5s #success=1 #failure=3
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-wrndl (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       False
+  ContainersReady             False
+  PodScheduled                True
+Volumes:
+  kube-api-access-wrndl:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                   From               Message
+  ----     ------     ----                  ----               -------
+  Normal   Scheduled  12m                   default-scheduler  Successfully assigned learning-eks/node-5f875c9b8c-hlhpd to ip-10-0-3-189.ap-south-1.compute.internal
+  Normal   Pulled     11m                   kubelet            spec.containers{node-app}: Successfully pulled image "165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest" in 14.373s (14.373s including waiting). Image size: 351764415 bytes.
+  Normal   Pulled     10m                   kubelet            spec.containers{node-app}: Successfully pulled image "165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest" in 99ms (99ms including waiting). Image size: 351764415 bytes.
+  Warning  Unhealthy  10m (x5 over 11m)     kubelet            spec.containers{node-app}: Liveness probe failed: HTTP probe failed with statuscode: 404
+  Normal   Pulled     9m32s                 kubelet            spec.containers{node-app}: Successfully pulled image "165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest" in 105ms (105ms including waiting). Image size: 351764415 bytes.
+  Normal   Pulled     8m22s                 kubelet            spec.containers{node-app}: Successfully pulled image "165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest" in 103ms (103ms including waiting). Image size: 351764415 bytes.
+  Normal   Started    7m12s (x5 over 11m)   kubelet            spec.containers{node-app}: Started container node-app
+  Normal   Created    7m12s (x5 over 11m)   kubelet            spec.containers{node-app}: Created container: node-app
+  Normal   Pulled     7m12s                 kubelet            spec.containers{node-app}: Successfully pulled image "165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest" in 98ms (98ms including waiting). Image size: 351764415 bytes.
+  Warning  Unhealthy  6m36s (x62 over 11m)  kubelet            spec.containers{node-app}: Readiness probe failed: HTTP probe failed with statuscode: 404
+  Normal   Killing    6m32s (x5 over 11m)   kubelet            spec.containers{node-app}: Container node-app failed liveness probe, will be restarted
+  Normal   Pulling    6m2s (x6 over 12m)    kubelet            spec.containers{node-app}: Pulling image "165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest"
+  Warning  BackOff    89s (x13 over 4m52s)  kubelet            spec.containers{node-app}: Back-off restarting failed container node-app in pod node-5f875c9b8c-hlhpd_learning-eks(18ddd7d7-f0be-4463-bbb3-b75242b7366f)
+[root@ip-10-0-3-116 manifest]# kubectl logs -n learning-eks node-5f875c9b8c-hlhpd --previous
+Running on http://0.0.0.0:3000
+[root@ip-10-0-3-116 manifest]# kubectl port-forward -n learning-eks pod/node-5f875c9b8c-hlhpd 3000:3000
+Forwarding from 127.0.0.1:3000 -> 3000
+Forwarding from [::1]:3000 -> 3000
+^Z
+[3]+  Stopped                 kubectl port-forward -n learning-eks pod/node-5f875c9b8c-hlhpd 3000:3000
+[root@ip-10-0-3-116 manifest]# cat /opt/learning-eks/dev-config/manifest/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node
+  namespace: learning-eks
+  labels:
+    app: node
+    project: node-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: node
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: node
+    spec:
+      containers:
+      - name: node-app
+        image: 165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+[root@ip-10-0-3-116 manifest]# vi  /opt/learning-eks/dev-config/manifest/deployment.yaml
+[root@ip-10-0-3-116 manifest]# ls
+deployment.yaml  hpa.yaml  ingress.yaml  namespace.yaml  service.yaml
+[root@ip-10-0-3-116 manifest]# rm -rf deployment.yaml
+[root@ip-10-0-3-116 manifest]# vi  /opt/learning-eks/dev-config/manifest/deployment.yaml
+[root@ip-10-0-3-116 manifest]# kubectl apply -f /opt/learning-eks/dev-config/manifest/deployment.yaml
+
+kubectl rollout restart deployment/node -n learning-eks
+
+kubectl rollout status deployment/node -n learning-eks
+deployment.apps/node configured
+deployment.apps/node restarted
+Waiting for deployment "node" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "node" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "node" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "node" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "node" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "node" rollout to finish: 1 old replicas are pending termination...
+deployment "node" successfully rolled out
+[root@ip-10-0-3-116 manifest]# kubectl get pods -n learning-eks
+
+kubectl get svc -n learning-eks
+
+kubectl describe pod -n learning-eks <pod-name>
+NAME                    READY   STATUS        RESTARTS   AGE
+node-67dc44fb4c-sxj7t   1/1     Terminating   0          51s
+node-6c8fd4f467-8rb52   1/1     Running       0          50s
+node-6c8fd4f467-vv8hw   1/1     Running       0          38s
+NAME           TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+node-service   LoadBalancer   172.20.148.181   <pending>     3000:30376/TCP   19m
+-bash: syntax error near unexpected token `newline'
+[root@ip-10-0-3-116 manifest]# kubectl describe pod node-6c8fd4f467-8rb52 -n learning-eks
+Name:             node-6c8fd4f467-8rb52
+Namespace:        learning-eks
+Priority:         0
+Service Account:  default
+Node:             ip-10-0-4-168.ap-south-1.compute.internal/10.0.4.168
+Start Time:       Sat, 30 May 2026 21:37:25 +0000
+Labels:           app=node
+                  pod-template-hash=6c8fd4f467
+Annotations:      kubectl.kubernetes.io/restartedAt: 2026-05-30T21:37:25Z
+Status:           Running
+IP:               10.0.4.11
+IPs:
+  IP:           10.0.4.11
+Controlled By:  ReplicaSet/node-6c8fd4f467
+Containers:
+  node-app:
+    Container ID:   containerd://ff497170537388a6d1d2271ac2db445d5297e13dbc5c5367feda0de808157f3a
+    Image:          165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest
+    Image ID:       165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node@sha256:e9dc4fd494f1b0b1afa3c275c29cc8fcca76c2448c6243a24beca1dfd480a832
+    Port:           3000/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sat, 30 May 2026 21:37:26 +0000
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     300m
+      memory:  256Mi
+    Requests:
+      cpu:        100m
+      memory:     128Mi
+    Liveness:     http-get http://:3000/ delay=30s timeout=2s period=10s #success=1 #failure=3
+    Readiness:    http-get http://:3000/ delay=10s timeout=2s period=5s #success=1 #failure=3
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-4b559 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       True
+  ContainersReady             True
+  PodScheduled                True
+Volumes:
+  kube-api-access-4b559:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  99s   default-scheduler  Successfully assigned learning-eks/node-6c8fd4f467-8rb52 to ip-10-0-4-168.ap-south-1.compute.internal
+  Normal  Pulling    98s   kubelet            spec.containers{node-app}: Pulling image "165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest"
+  Normal  Pulled     98s   kubelet            spec.containers{node-app}: Successfully pulled image "165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest" in 104ms (104ms including waiting). Image size: 351764415 bytes.
+  Normal  Created    98s   kubelet            spec.containers{node-app}: Created container: node-app
+  Normal  Started    98s   kubelet            spec.containers{node-app}: Started container node-app
+[root@ip-10-0-3-116 manifest]# ls
+deployment.yaml  hpa.yaml  ingress.yaml  namespace.yaml  service.yaml
+[root@ip-10-0-3-116 manifest]# cat hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: node-hpa
+  namespace: learning-eks
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: node-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+[root@ip-10-0-3-116 manifest]# curl http://localhost:3000
+^Z
+[4]+  Stopped                 curl http://localhost:3000
+[root@ip-10-0-3-116 manifest]# curl http://0.0.0.0:3000
+^Z
+[5]+  Stopped                 curl http://0.0.0.0:3000
+[root@ip-10-0-3-116 manifest]# kubectl describe pod -n learning-eks
+Name:             node-5f948d5658-4c648
+Namespace:        learning-eks
+Priority:         0
+Service Account:  default
+Node:             ip-10-0-3-189.ap-south-1.compute.internal/10.0.3.189
+Start Time:       Sat, 30 May 2026 21:41:18 +0000
+Labels:           app=node
+                  pod-template-hash=5f948d5658
+Annotations:      kubectl.kubernetes.io/restartedAt: 2026-05-30T21:41:05Z
+Status:           Running
+IP:               10.0.3.70
+IPs:
+  IP:           10.0.3.70
+Controlled By:  ReplicaSet/node-5f948d5658
+Containers:
+  node-app:
+    Container ID:   containerd://2e90370f68e9a60b6d5b11bce863c6dc45aeb95e9e0dceaa5d502b9c2a9579a0
+    Image:          165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest
+    Image ID:       165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node@sha256:e9dc4fd494f1b0b1afa3c275c29cc8fcca76c2448c6243a24beca1dfd480a832
+    Port:           3000/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sat, 30 May 2026 21:41:18 +0000
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     300m
+      memory:  256Mi
+    Requests:
+      cpu:        100m
+      memory:     128Mi
+    Liveness:     http-get http://:3000/ delay=30s timeout=2s period=10s #success=1 #failure=3
+    Readiness:    http-get http://:3000/ delay=10s timeout=2s period=5s #success=1 #failure=3
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-klp84 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       True
+  ContainersReady             True
+  PodScheduled                True
+Volumes:
+  kube-api-access-klp84:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+
+
+Name:             node-5f948d5658-c9b67
+Namespace:        learning-eks
+Priority:         0
+Service Account:  default
+Node:             ip-10-0-4-168.ap-south-1.compute.internal/10.0.4.168
+Start Time:       Sat, 30 May 2026 21:41:05 +0000
+Labels:           app=node
+                  pod-template-hash=5f948d5658
+Annotations:      kubectl.kubernetes.io/restartedAt: 2026-05-30T21:41:05Z
+Status:           Running
+IP:               10.0.4.131
+IPs:
+  IP:           10.0.4.131
+Controlled By:  ReplicaSet/node-5f948d5658
+Containers:
+  node-app:
+    Container ID:   containerd://08b8412ef13f1ea43d7eab208a5580fc66bd5a35f14f93260e13e1441ee145b3
+    Image:          165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest
+    Image ID:       165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node@sha256:e9dc4fd494f1b0b1afa3c275c29cc8fcca76c2448c6243a24beca1dfd480a832
+    Port:           3000/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sat, 30 May 2026 21:41:06 +0000
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     300m
+      memory:  256Mi
+    Requests:
+      cpu:        100m
+      memory:     128Mi
+    Liveness:     http-get http://:3000/ delay=30s timeout=2s period=10s #success=1 #failure=3
+    Readiness:    http-get http://:3000/ delay=10s timeout=2s period=5s #success=1 #failure=3
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-zndrq (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       True
+  ContainersReady             True
+  PodScheduled                True
+Volumes:
+  kube-api-access-zndrq:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+[root@ip-10-0-3-116 manifest]# kubectl get svc -n learning-eks
+NAME           TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+node-service   LoadBalancer   172.20.148.181   <pending>     3000:30376/TCP   34m
+[root@ip-10-0-3-116 manifest]# ls
+deployment.yaml  hpa.yaml  ingress.yaml  namespace.yaml  service.yaml
+[root@ip-10-0-3-116 manifest]# kubectl get ingress -n learning-eks
+NAME               CLASS          HOSTS                    ADDRESS   PORTS   AGE
+learning-ingress   learning-alb   node-app.eduupdate.net             80      29m
+[root@ip-10-0-3-116 manifest]# kubectl get pods -n kube-system | grep aws-load-balancer
+aws-load-balancer-controller-858887465c-bf47b   1/1     Running   0          83m
+aws-load-balancer-controller-858887465c-n5hzd   1/1     Running   0          83m
+[root@ip-10-0-3-116 manifest]# kubectl describe ingress learning-ingress -n learning-eks
+Name:             learning-ingress
+Labels:           <none>
+Namespace:        learning-eks
+Address:
+Ingress Class:    learning-alb
+Default backend:  <default>
+Rules:
+  Host                    Path  Backends
+  ----                    ----  --------
+  node-app.eduupdate.net
+                          /   node-service-tg:3000 (<error: services "node-service-tg" not found>)
+Annotations:              alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:165286508822:certificate/c9afb5ab-8b5f-413e-90fa-a8cd66ebc5e5
+                          alb.ingress.kubernetes.io/healthcheck-interval-seconds: 30
+                          alb.ingress.kubernetes.io/healthcheck-path: /health
+                          alb.ingress.kubernetes.io/listen-ports: [{"HTTP":80},{"HTTPS":443}]
+                          alb.ingress.kubernetes.io/scheme: internet-facing
+                          alb.ingress.kubernetes.io/security-groups: sg-09e0d4273d00cfd22
+                          alb.ingress.kubernetes.io/ssl-redirect: 443
+                          alb.ingress.kubernetes.io/target-type: ip
+                          kubernetes.io/ingress.class: learning-alb
+Events:                   <none>
+[root@ip-10-0-3-116 manifest]# cat /opt/learning-eks/dev-config/manifest/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: learning-ingress
+  namespace: learning-eks
+  annotations:
+    kubernetes.io/ingress.class: learning-alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:165286508822:certificate/c9afb5ab-8b5f-413e-90fa-a8cd66ebc5e5
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "30"
+    alb.ingress.kubernetes.io/security-groups: sg-09e0d4273d00cfd22
+
+spec:
+  ingressClassName: learning-alb
+  rules:
+    - host: node-app.eduupdate.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: node-service-tg
+                port:
+                  number: 3000
+[root@ip-10-0-3-116 manifest]# ls
+deployment.yaml  hpa.yaml  ingress.yaml  namespace.yaml  service.yaml
+[root@ip-10-0-3-116 manifest]# rm -rf ingress.yaml
+[root@ip-10-0-3-116 manifest]# vi ingress.yaml
+[root@ip-10-0-3-116 manifest]# kubectl apply -f /opt/learning-eks/dev-config/manifest/ingress.yaml
+ingress.networking.k8s.io/learning-ingress configured
+[root@ip-10-0-3-116 manifest]# kubectl delete ingress learning-ingress -n learning-eks
+
+kubectl apply -f /opt/learning-eks/dev-config/manifest/ingress.yaml
+ingress.networking.k8s.io "learning-ingress" deleted from learning-eks namespace
+ingress.networking.k8s.io/learning-ingress created
+[root@ip-10-0-3-116 manifest]# kubectl get ingress -n learning-eks -w
+NAME               CLASS          HOSTS                    ADDRESS   PORTS   AGE
+learning-ingress   learning-alb   node-app.eduupdate.net             80      14s
+^Z
+[6]+  Stopped                 kubectl get ingress -n learning-eks -w
+[root@ip-10-0-3-116 manifest]# kubectl describe ingress learning-ingress -n learning-eks
+
+kubectl logs -n kube-system deployment/aws-load-balancer-controller --tail=100
+Name:             learning-ingress
+Labels:           <none>
+Namespace:        learning-eks
+Address:
+Ingress Class:    learning-alb
+Default backend:  <default>
+Rules:
+  Host                    Path  Backends
+  ----                    ----  --------
+  node-app.eduupdate.net
+                          /   node-service:3000 ()
+Annotations:              alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:165286508822:certificate/c9afb5ab-8b5f-413e-90fa-a8cd66ebc5e5
+                          alb.ingress.kubernetes.io/healthcheck-interval-seconds: 30
+                          alb.ingress.kubernetes.io/healthcheck-path: /
+                          alb.ingress.kubernetes.io/listen-ports: [{"HTTP":80},{"HTTPS":443}]
+                          alb.ingress.kubernetes.io/scheme: internet-facing
+                          alb.ingress.kubernetes.io/security-groups: sg-09e0d4273d00cfd22
+                          alb.ingress.kubernetes.io/ssl-redirect: 443
+                          alb.ingress.kubernetes.io/target-type: ip
+                          kubernetes.io/ingress.class: learning-alb
+Events:                   <none>
+Found 2 pods, using pod/aws-load-balancer-controller-858887465c-bf47b
+{"level":"info","ts":"2026-05-30T20:31:46Z","msg":"version","GitVersion":"v3.3.0","GitCommit":"46816a2070db45b3407b138522d054ebad521f79","BuildDate":"2026-05-05T20:33:32+0000"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"setup","msg":"Disabling ALBGatewayAPI: missing required CRDs","missing":["Gateway","GatewayClass","HTTPRoute","GRPCRoute"]}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"setup","msg":"Disabling NLBGatewayAPI: missing required CRDs","missing":["Gateway","GatewayClass","TLSRoute","TCPRoute","UDPRoute"]}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"setup","msg":"Disabling GatewayListenerSet: missing required CRDs","missing":["ListenerSet"]}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"setup","msg":"adding health check for controller"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"setup","msg":"adding readiness check for webhook"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"controller-runtime.webhook","msg":"Registering webhook","path":"/mutate-v1-pod"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"controller-runtime.webhook","msg":"Registering webhook","path":"/mutate-v1-pod-server-id"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"controller-runtime.webhook","msg":"Registering webhook","path":"/mutate-v1-service"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"controller-runtime.webhook","msg":"Registering webhook","path":"/validate-elbv2-k8s-aws-v1beta1-ingressclassparams"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"controller-runtime.webhook","msg":"Registering webhook","path":"/mutate-elbv2-k8s-aws-v1beta1-targetgroupbinding"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"controller-runtime.webhook","msg":"Registering webhook","path":"/validate-elbv2-k8s-aws-v1beta1-targetgroupbinding"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"controller-runtime.webhook","msg":"Registering webhook","path":"/validate-networking-v1-ingress"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"setup","msg":"starting deferred tgb reconciler"}
+{"level":"info","ts":"2026-05-30T20:31:46Z","logger":"setup","msg":"starting podInfo repo"}
+{"level":"info","ts":"2026-05-30T20:31:48Z","logger":"setup","msg":"starting collect cache size"}
+{"level":"info","ts":"2026-05-30T20:31:48Z","logger":"setup","msg":"starting collect top talkers"}
+{"level":"info","ts":"2026-05-30T20:31:48Z","logger":"controller-runtime.metrics","msg":"Starting metrics server"}
+{"level":"info","ts":"2026-05-30T20:31:48Z","msg":"starting server","name":"health probe","addr":"[::]:61779"}
+{"level":"info","ts":"2026-05-30T20:31:48Z","logger":"controller-runtime.webhook","msg":"Starting webhook server"}
+{"level":"info","ts":"2026-05-30T20:31:48Z","logger":"controller-runtime.metrics","msg":"Serving metrics server","bindAddress":":8080","secure":false}
+{"level":"info","ts":"2026-05-30T20:31:48Z","logger":"controller-runtime.certwatcher","msg":"Updated current TLS certificate","cert":"/tmp/k8s-webhook-server/serving-certs/tls.crt","key":"/tmp/k8s-webhook-server/serving-certs/tls.key"}
+{"level":"info","ts":"2026-05-30T20:31:48Z","logger":"controller-runtime.webhook","msg":"Serving webhook server","host":"","port":9443}
+{"level":"info","ts":"2026-05-30T20:31:48Z","logger":"controller-runtime.certwatcher","msg":"Starting certificate poll+watcher","cert":"/tmp/k8s-webhook-server/serving-certs/tls.crt","key":"/tmp/k8s-webhook-server/serving-certs/tls.key","interval":10}
+{"level":"info","ts":"2026-05-30T20:31:48Z","msg":"Attempting to acquire leader lease...","lock":"kube-system/aws-load-balancer-controller-leader"}
+{"level":"info","ts":"2026-05-30T21:18:35Z","msg":"setting service loadBalancerClass","service":"node-service","loadBalancerClass":"service.k8s.aws/nlb"}
+[root@ip-10-0-3-116 manifest]# kubectl get ingressclass
+NAME   CONTROLLER            PARAMETERS   AGE
+alb    ingress.k8s.aws/alb   <none>       90m
+[root@ip-10-0-3-116 manifest]# rm -rf ingress.yaml
+[root@ip-10-0-3-116 manifest]# vi  ingress.yaml
+[root@ip-10-0-3-116 manifest]# kubectl delete ingress learning-ingress -n learning-eks
+
+kubectl apply -f /opt/learning-eks/dev-config/manifest/ingress.yaml
+ingress.networking.k8s.io "learning-ingress" deleted from learning-eks namespace
+ingress.networking.k8s.io/learning-ingress created
+[root@ip-10-0-3-116 manifest]# cat /opt/learning-eks/dev-config/manifest/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-service
+  namespace: learning-eks
+spec:
+  selector:
+    app: node-app
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: LoadBalancer
+[root@ip-10-0-3-116 manifest]# ls
+deployment.yaml  hpa.yaml  ingress.yaml  namespace.yaml  service.yaml
+[root@ip-10-0-3-116 manifest]# rm -rf service.yaml
+[root@ip-10-0-3-116 manifest]# vi service.yaml
+[root@ip-10-0-3-116 manifest]# kubectl apply -f /opt/learning-eks/dev-config/manifest/service.yaml
+
+kubectl get endpoints -n learning-eks node-service
+service/node-service configured
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME           ENDPOINTS                        AGE
+node-service   10.0.3.70:3000,10.0.4.131:3000   48m
+[root@ip-10-0-3-116 manifest]# kubectl get ingress -n learning-eks -w
+NAME               CLASS   HOSTS                    ADDRESS   PORTS   AGE
+learning-ingress   alb     node-app.eduupdate.net             80      2m42s
+^Z
+[7]+  Stopped                 kubectl get ingress -n learning-eks -w
+[root@ip-10-0-3-116 manifest]# kubectl get endpoints node-service -n learning-eks
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME           ENDPOINTS                        AGE
+node-service   10.0.3.70:3000,10.0.4.131:3000   49m
+[root@ip-10-0-3-116 manifest]# kubectl describe ingress learning-ingress -n learning-eks
+Name:             learning-ingress
+Labels:           <none>
+Namespace:        learning-eks
+Address:
+Ingress Class:    alb
+Default backend:  <default>
+Rules:
+  Host                    Path  Backends
+  ----                    ----  --------
+  node-app.eduupdate.net
+                          /   node-service:3000 (10.0.4.131:3000,10.0.3.70:3000)
+Annotations:              alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:165286508822:certificate/c9afb5ab-8b5f-413e-90fa-a8cd66ebc5e5
+                          alb.ingress.kubernetes.io/healthcheck-interval-seconds: 30
+                          alb.ingress.kubernetes.io/healthcheck-path: /
+                          alb.ingress.kubernetes.io/listen-ports: [{"HTTP":80},{"HTTPS":443}]
+                          alb.ingress.kubernetes.io/scheme: internet-facing
+                          alb.ingress.kubernetes.io/security-groups: sg-09e0d4273d00cfd22
+                          alb.ingress.kubernetes.io/ssl-redirect: 443
+                          alb.ingress.kubernetes.io/target-type: ip
+                          kubernetes.io/ingress.class: alb
+Events:
+  Type     Reason            Age                    From     Message
+  ----     ------            ----                   ----     -------
+  Warning  FailedBuildModel  4m44s                  ingress  Failed build model due to couldn't auto-discover subnets: failed to list subnets by reachability: operation error EC2: DescribeRouteTables, https response error StatusCode: 403, RequestID: d16b5efb-ac49-4dc9-b0a6-eaad776e4d4c, api error UnauthorizedOperation: You are not authorized to perform this operation. User: arn:aws:sts::165286508822:assumed-role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz/1780175915930304634 is not authorized to perform: ec2:DescribeRouteTables because no identity-based policy allows the ec2:DescribeRouteTables action
+  Warning  FailedBuildModel  4m44s                  ingress  Failed build model due to couldn't auto-discover subnets: failed to list subnets by reachability: operation error EC2: DescribeRouteTables, https response error StatusCode: 403, RequestID: dd563535-f1e3-4ae0-9f8f-c0dc6ac4d7f4, api error UnauthorizedOperation: You are not authorized to perform this operation. User: arn:aws:sts::165286508822:assumed-role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz/1780175915930304634 is not authorized to perform: ec2:DescribeRouteTables because no identity-based policy allows the ec2:DescribeRouteTables action
+  Warning  FailedBuildModel  4m44s                  ingress  Failed build model due to couldn't auto-discover subnets: failed to list subnets by reachability: operation error EC2: DescribeRouteTables, https response error StatusCode: 403, RequestID: c004e422-45c2-474a-9a0c-fd119f855d98, api error UnauthorizedOperation: You are not authorized to perform this operation. User: arn:aws:sts::165286508822:assumed-role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz/1780175915930304634 is not authorized to perform: ec2:DescribeRouteTables because no identity-based policy allows the ec2:DescribeRouteTables action
+  Warning  FailedBuildModel  4m44s                  ingress  Failed build model due to couldn't auto-discover subnets: failed to list subnets by reachability: operation error EC2: DescribeRouteTables, https response error StatusCode: 403, RequestID: 3c053a75-8e99-47dd-8eb3-d0f896cd6dc5, api error UnauthorizedOperation: You are not authorized to perform this operation. User: arn:aws:sts::165286508822:assumed-role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz/1780175915930304634 is not authorized to perform: ec2:DescribeRouteTables because no identity-based policy allows the ec2:DescribeRouteTables action
+  Warning  FailedBuildModel  4m44s                  ingress  Failed build model due to couldn't auto-discover subnets: failed to list subnets by reachability: operation error EC2: DescribeRouteTables, https response error StatusCode: 403, RequestID: 56aa9e1a-473d-4610-84e7-dffe252a01a5, api error UnauthorizedOperation: You are not authorized to perform this operation. User: arn:aws:sts::165286508822:assumed-role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz/1780175915930304634 is not authorized to perform: ec2:DescribeRouteTables because no identity-based policy allows the ec2:DescribeRouteTables action
+  Warning  FailedBuildModel  4m43s                  ingress  Failed build model due to couldn't auto-discover subnets: failed to list subnets by reachability: operation error EC2: DescribeRouteTables, https response error StatusCode: 403, RequestID: 534e9360-cb78-4487-b2a0-38995aee90d1, api error UnauthorizedOperation: You are not authorized to perform this operation. User: arn:aws:sts::165286508822:assumed-role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz/1780175915930304634 is not authorized to perform: ec2:DescribeRouteTables because no identity-based policy allows the ec2:DescribeRouteTables action
+  Warning  FailedBuildModel  4m43s                  ingress  Failed build model due to couldn't auto-discover subnets: failed to list subnets by reachability: operation error EC2: DescribeRouteTables, https response error StatusCode: 403, RequestID: f481d992-3875-48fd-b6fb-fb08cb3e9d9e, api error UnauthorizedOperation: You are not authorized to perform this operation. User: arn:aws:sts::165286508822:assumed-role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz/1780175915930304634 is not authorized to perform: ec2:DescribeRouteTables because no identity-based policy allows the ec2:DescribeRouteTables action
+  Warning  FailedBuildModel  4m43s                  ingress  Failed build model due to couldn't auto-discover subnets: failed to list subnets by reachability: operation error EC2: DescribeRouteTables, https response error StatusCode: 403, RequestID: 0db6d102-1838-44fa-b083-59dacffc95ab, api error UnauthorizedOperation: You are not authorized to perform this operation. User: arn:aws:sts::165286508822:assumed-role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz/1780175915930304634 is not authorized to perform: ec2:DescribeRouteTables because no identity-based policy allows the ec2:DescribeRouteTables action
+  Warning  FailedBuildModel  4m42s                  ingress  Failed build model due to couldn't auto-discover subnets: failed to list subnets by reachability: operation error EC2: DescribeRouteTables, https response error StatusCode: 403, RequestID: 8cd3e632-d05f-44aa-900b-70fa240e4d60, api error UnauthorizedOperation: You are not authorized to perform this operation. User: arn:aws:sts::165286508822:assumed-role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz/1780175915930304634 is not authorized to perform: ec2:DescribeRouteTables because no identity-based policy allows the ec2:DescribeRouteTables action
+  Warning  FailedBuildModel  2m21s (x7 over 4m41s)  ingress  (combined from similar events): Failed build model due to couldn't auto-discover subnets: failed to list subnets by reachability: operation error EC2: DescribeRouteTables, https response error StatusCode: 403, RequestID: ca79b158-7c36-4f97-b2bd-417f89a7f727, api error UnauthorizedOperation: You are not authorized to perform this operation. User: arn:aws:sts::165286508822:assumed-role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz/1780175915930304634 is not authorized to perform: ec2:DescribeRouteTables because no identity-based policy allows the ec2:DescribeRouteTables action
+[root@ip-10-0-3-116 manifest]# aws iam get-role \
+  --role-name eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz
+{
+    "Role": {
+        "Path": "/",
+        "RoleName": "eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz",
+        "RoleId": "AROASM66X7ELDRAC74MPN",
+        "Arn": "arn:aws:iam::165286508822:role/eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz",
+        "CreateDate": "2026-05-30T20:24:14+00:00",
+        "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Federated": "arn:aws:iam::165286508822:oidc-provider/oidc.eks.ap-south-1.amazonaws.com/id/2CC3810D58E91E31F2905667478CDBCE"
+                    },
+                    "Action": "sts:AssumeRoleWithWebIdentity",
+                    "Condition": {
+                        "StringEquals": {
+                            "oidc.eks.ap-south-1.amazonaws.com/id/2CC3810D58E91E31F2905667478CDBCE:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller",
+                            "oidc.eks.ap-south-1.amazonaws.com/id/2CC3810D58E91E31F2905667478CDBCE:aud": "sts.amazonaws.com"
+                        }
+                    }
+                }
+            ]
+        },
+        "Description": "",
+        "MaxSessionDuration": 3600,
+        "Tags": [
+            {
+                "Key": "alpha.eksctl.io/cluster-name",
+                "Value": "learning-eks"
+            },
+            {
+                "Key": "alpha.eksctl.io/iamserviceaccount-name",
+                "Value": "kube-system/aws-load-balancer-controller"
+            },
+            {
+                "Key": "alpha.eksctl.io/eksctl-version",
+                "Value": "0.226.0"
+            },
+            {
+                "Key": "eksctl.cluster.k8s.io/v1alpha1/cluster-name",
+                "Value": "learning-eks"
+            }
+        ],
+        "RoleLastUsed": {
+            "LastUsedDate": "2026-05-30T21:57:09+00:00",
+            "Region": "ap-south-1"
+        }
+    }
+}
+[root@ip-10-0-3-116 manifest]# aws iam list-attached-role-policies \
+  --role-name eksctl-learning-eks-addon-iamserviceaccount-k-Role1-wCE3TklI1Frz
+{
+    "AttachedPolicies": [
+        {
+            "PolicyName": "AWSLoadBalancerControllerIAMPolicy",
+            "PolicyArn": "arn:aws:iam::165286508822:policy/AWSLoadBalancerControllerIAMPolicy"
+        }
+    ]
+}
+[root@ip-10-0-3-116 manifest]# aws iam get-policy \
+  --policy-arn arn:aws:iam::165286508822:policy/AWSLoadBalancerControllerIAMPolicy
+{
+    "Policy": {
+        "PolicyName": "AWSLoadBalancerControllerIAMPolicy",
+        "PolicyId": "ANPASM66X7ELOWZLR4ZCE",
+        "Arn": "arn:aws:iam::165286508822:policy/AWSLoadBalancerControllerIAMPolicy",
+        "Path": "/",
+        "DefaultVersionId": "v1",
+        "AttachmentCount": 1,
+        "PermissionsBoundaryUsageCount": 0,
+        "IsAttachable": true,
+        "CreateDate": "2026-05-30T20:20:05+00:00",
+        "UpdateDate": "2026-05-30T20:20:05+00:00",
+        "Tags": []
+    }
+}
+[root@ip-10-0-3-116 manifest]# aws iam get-policy-version \
+  --policy-arn arn:aws:iam::165286508822:policy/AWSLoadBalancerControllerIAMPolicy \
+  --version-id v1
+{
+    "PolicyVersion": {
+        "Document": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "iam:CreateServiceLinkedRole"
+                    ],
+                    "Resource": "*",
+                    "Condition": {
+                        "StringEquals": {
+                            "iam:AWSServiceName": "elasticloadbalancing.amazonaws.com"
+                        }
+                    }
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:DescribeAccountAttributes",
+                        "ec2:DescribeAddresses",
+                        "ec2:DescribeAvailabilityZones",
+                        "ec2:DescribeInternetGateways",
+                        "ec2:DescribeVpcs",
+                        "ec2:DescribeVpcPeeringConnections",
+                        "ec2:DescribeSubnets",
+                        "ec2:DescribeSecurityGroups",
+                        "ec2:DescribeInstances",
+                        "ec2:DescribeNetworkInterfaces",
+                        "ec2:DescribeTags",
+                        "ec2:GetCoipPoolUsage",
+                        "ec2:DescribeCoipPools",
+                        "elasticloadbalancing:DescribeLoadBalancers",
+                        "elasticloadbalancing:DescribeLoadBalancerAttributes",
+                        "elasticloadbalancing:DescribeListeners",
+                        "elasticloadbalancing:DescribeListenerCertificates",
+                        "elasticloadbalancing:DescribeSSLPolicies",
+                        "elasticloadbalancing:DescribeRules",
+                        "elasticloadbalancing:DescribeTargetGroups",
+                        "elasticloadbalancing:DescribeTargetGroupAttributes",
+                        "elasticloadbalancing:DescribeTargetHealth",
+                        "elasticloadbalancing:DescribeTags"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "cognito-idp:DescribeUserPoolClient",
+                        "acm:ListCertificates",
+                        "acm:DescribeCertificate",
+                        "iam:ListServerCertificates",
+                        "iam:GetServerCertificate",
+                        "waf-regional:GetWebACL",
+                        "waf-regional:GetWebACLForResource",
+                        "waf-regional:AssociateWebACL",
+                        "waf-regional:DisassociateWebACL",
+                        "wafv2:GetWebACL",
+                        "wafv2:GetWebACLForResource",
+                        "wafv2:AssociateWebACL",
+                        "wafv2:DisassociateWebACL",
+                        "shield:GetSubscriptionState",
+                        "shield:DescribeProtection",
+                        "shield:CreateProtection",
+                        "shield:DeleteProtection"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:AuthorizeSecurityGroupIngress",
+                        "ec2:RevokeSecurityGroupIngress"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:CreateSecurityGroup"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:CreateTags"
+                    ],
+                    "Resource": "arn:aws:ec2:*:*:security-group/*",
+                    "Condition": {
+                        "StringEquals": {
+                            "ec2:CreateAction": "CreateSecurityGroup"
+                        },
+                        "Null": {
+                            "aws:RequestTag/elbv2.k8s.aws/cluster": "false"
+                        }
+                    }
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:CreateTags",
+                        "ec2:DeleteTags"
+                    ],
+                    "Resource": "arn:aws:ec2:*:*:security-group/*",
+                    "Condition": {
+                        "Null": {
+                            "aws:RequestTag/elbv2.k8s.aws/cluster": "true",
+                            "aws:ResourceTag/elbv2.k8s.aws/cluster": "false"
+                        }
+                    }
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:AuthorizeSecurityGroupIngress",
+                        "ec2:RevokeSecurityGroupIngress",
+                        "ec2:DeleteSecurityGroup"
+                    ],
+                    "Resource": "*",
+                    "Condition": {
+                        "Null": {
+                            "aws:ResourceTag/elbv2.k8s.aws/cluster": "false"
+                        }
+                    }
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "elasticloadbalancing:CreateLoadBalancer",
+                        "elasticloadbalancing:CreateTargetGroup"
+                    ],
+                    "Resource": "*",
+                    "Condition": {
+                        "Null": {
+                            "aws:RequestTag/elbv2.k8s.aws/cluster": "false"
+                        }
+                    }
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "elasticloadbalancing:CreateListener",
+                        "elasticloadbalancing:DeleteListener",
+                        "elasticloadbalancing:CreateRule",
+                        "elasticloadbalancing:DeleteRule"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "elasticloadbalancing:AddTags",
+                        "elasticloadbalancing:RemoveTags"
+                    ],
+                    "Resource": [
+                        "arn:aws:elasticloadbalancing:*:*:targetgroup/*/*",
+                        "arn:aws:elasticloadbalancing:*:*:loadbalancer/net/*/*",
+                        "arn:aws:elasticloadbalancing:*:*:loadbalancer/app/*/*"
+                    ],
+                    "Condition": {
+                        "Null": {
+                            "aws:RequestTag/elbv2.k8s.aws/cluster": "true",
+                            "aws:ResourceTag/elbv2.k8s.aws/cluster": "false"
+                        }
+                    }
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "elasticloadbalancing:AddTags",
+                        "elasticloadbalancing:RemoveTags"
+                    ],
+                    "Resource": [
+                        "arn:aws:elasticloadbalancing:*:*:listener/net/*/*/*",
+                        "arn:aws:elasticloadbalancing:*:*:listener/app/*/*/*",
+                        "arn:aws:elasticloadbalancing:*:*:listener-rule/net/*/*/*",
+                        "arn:aws:elasticloadbalancing:*:*:listener-rule/app/*/*/*"
+                    ]
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "elasticloadbalancing:ModifyLoadBalancerAttributes",
+                        "elasticloadbalancing:SetIpAddressType",
+                        "elasticloadbalancing:SetSecurityGroups",
+                        "elasticloadbalancing:SetSubnets",
+                        "elasticloadbalancing:DeleteLoadBalancer",
+                        "elasticloadbalancing:ModifyTargetGroup",
+                        "elasticloadbalancing:ModifyTargetGroupAttributes",
+                        "elasticloadbalancing:DeleteTargetGroup"
+                    ],
+                    "Resource": "*",
+                    "Condition": {
+                        "Null": {
+                            "aws:ResourceTag/elbv2.k8s.aws/cluster": "false"
+                        }
+                    }
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "elasticloadbalancing:AddTags"
+                    ],
+                    "Resource": [
+                        "arn:aws:elasticloadbalancing:*:*:targetgroup/*/*",
+                        "arn:aws:elasticloadbalancing:*:*:loadbalancer/net/*/*",
+                        "arn:aws:elasticloadbalancing:*:*:loadbalancer/app/*/*"
+                    ],
+                    "Condition": {
+                        "StringEquals": {
+                            "elasticloadbalancing:CreateAction": [
+                                "CreateTargetGroup",
+                                "CreateLoadBalancer"
+                            ]
+                        },
+                        "Null": {
+                            "aws:RequestTag/elbv2.k8s.aws/cluster": "false"
+                        }
+                    }
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "elasticloadbalancing:RegisterTargets",
+                        "elasticloadbalancing:DeregisterTargets"
+                    ],
+                    "Resource": "arn:aws:elasticloadbalancing:*:*:targetgroup/*/*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "elasticloadbalancing:SetWebAcl",
+                        "elasticloadbalancing:ModifyListener",
+                        "elasticloadbalancing:AddListenerCertificates",
+                        "elasticloadbalancing:RemoveListenerCertificates",
+                        "elasticloadbalancing:ModifyRule"
+                    ],
+                    "Resource": "*"
+                }
+            ]
+        },
+        "VersionId": "v1",
+        "IsDefaultVersion": true,
+        "CreateDate": "2026-05-30T20:20:05+00:00"
+    }
+}
+[root@ip-10-0-3-116 manifest]# curl -o iam_policy.json \
+https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  8955 100  8955   0     0 36557     0  --:--:-- --:--:-- --:--:-- 36551
+[root@ip-10-0-3-116 manifest]# grep DescribeRouteTables iam_policy.json
+                "ec2:DescribeRouteTables",
+[root@ip-10-0-3-116 manifest]# aws iam create-policy-version \
+  --policy-arn arn:aws:iam::165286508822:policy/AWSLoadBalancerControllerIAMPolicy \
+  --policy-document file://iam_policy.json \
+  --set-as-default
+{
+    "PolicyVersion": {
+        "VersionId": "v2",
+        "IsDefaultVersion": true,
+        "CreateDate": "2026-05-30T22:14:02+00:00"
+    }
+}
+[root@ip-10-0-3-116 manifest]# kubectl rollout restart deployment aws-load-balancer-controller \
+  -n kube-system
+
+kubectl rollout status deployment aws-load-balancer-controller \
+  -n kube-system
+deployment.apps/aws-load-balancer-controller restarted
+Waiting for deployment "aws-load-balancer-controller" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "aws-load-balancer-controller" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "aws-load-balancer-controller" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "aws-load-balancer-controller" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "aws-load-balancer-controller" rollout to finish: 1 old replicas are pending termination...
+deployment "aws-load-balancer-controller" successfully rolled out
+[root@ip-10-0-3-116 manifest]# kubectl delete ingress learning-ingress -n learning-eks
+
+kubectl apply -f /opt/learning-eks/dev-config/manifest/ingress.yaml
+ingress.networking.k8s.io "learning-ingress" deleted from learning-eks namespace
+ingress.networking.k8s.io/learning-ingress created
+[root@ip-10-0-3-116 manifest]# kubectl get ingress -n learning-eks -w
+NAME               CLASS   HOSTS                    ADDRESS                                                                   PORTS   AGE
+learning-ingress   alb     node-app.eduupdate.net   k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com   80      15s
+^Z
+[8]+  Stopped                 kubectl get ingress -n learning-eks -w
+[root@ip-10-0-3-116 manifest]# kubectl get ingress -n learning-eks
+NAME               CLASS   HOSTS                    ADDRESS                                                                   PORTS   AGE
+learning-ingress   alb     node-app.eduupdate.net   k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com   80      5m22s
+[root@ip-10-0-3-116 manifest]# curl http://k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com
+<html>
+<head><title>301 Moved Permanently</title></head>
+<body>
+<center><h1>301 Moved Permanently</h1></center>
+</body>
+</html>
+[root@ip-10-0-3-116 manifest]# curl -vk https://k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com
+* Host k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com:443 was resolved.
+* IPv6: (none)
+* IPv4: 3.111.15.206, 43.204.14.1
+*   Trying 3.111.15.206:443...
+* ALPN: curl offers h2,http/1.1
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* SSL Trust: peer verification disabled
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / secp256r1 / rsaEncryption
+* ALPN: server accepted h2
+* Server certificate:
+*   subject: CN=*.eduupdate.net
+*   start date: May 25 00:00:00 2026 GMT
+*   expire date: Dec  8 23:59:59 2026 GMT
+*   issuer: C=US; O=Amazon; CN=Amazon RSA 2048 M04
+*   Certificate level 0: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 2: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+* SSL certificate OpenSSL verify result: unable to get local issuer certificate (20)
+*  SSL certificate verification failed, continuing anyway!
+* Established connection to k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com (3.111.15.206 port 443) from 10.0.3.116 port 34230
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com/
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com]
+* [HTTP/2] [1] [:path: /]
+* [HTTP/2] [1] [user-agent: curl/8.17.0]
+* [HTTP/2] [1] [accept: */*]
+> GET / HTTP/2
+> Host: k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com
+> User-Agent: curl/8.17.0
+> Accept: */*
+>
+* Request completely sent off
+< HTTP/2 404
+< server: awselb/2.0
+< date: Sat, 30 May 2026 22:22:48 GMT
+< content-type: text/plain; charset=utf-8
+< content-length: 0
+<
+* Connection #0 to host k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com:443 left intact
+[root@ip-10-0-3-116 manifest]# curl -vk \
+-H "Host: node-app.eduupdate.net" \
+https://k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com
+* Host k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com:443 was resolved.
+* IPv6: (none)
+* IPv4: 43.204.14.1, 3.111.15.206
+*   Trying 43.204.14.1:443...
+* ALPN: curl offers h2,http/1.1
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* SSL Trust: peer verification disabled
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / secp256r1 / rsaEncryption
+* ALPN: server accepted h2
+* Server certificate:
+*   subject: CN=*.eduupdate.net
+*   start date: May 25 00:00:00 2026 GMT
+*   expire date: Dec  8 23:59:59 2026 GMT
+*   issuer: C=US; O=Amazon; CN=Amazon RSA 2048 M04
+*   Certificate level 0: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 2: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+* SSL certificate OpenSSL verify result: unable to get local issuer certificate (20)
+*  SSL certificate verification failed, continuing anyway!
+* Established connection to k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com (43.204.14.1 port 443) from 10.0.3.116 port 50774
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com/
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: node-app.eduupdate.net]
+* [HTTP/2] [1] [:path: /]
+* [HTTP/2] [1] [user-agent: curl/8.17.0]
+* [HTTP/2] [1] [accept: */*]
+> GET / HTTP/2
+> Host: node-app.eduupdate.net
+> User-Agent: curl/8.17.0
+> Accept: */*
+>
+* Request completely sent off
+< HTTP/2 504
+< server: awselb/2.0
+< date: Sat, 30 May 2026 22:24:13 GMT
+< content-type: text/html
+< content-length: 132
+<
+<html>
+<head><title>504 Gateway Time-out</title></head>
+<body>
+<center><h1>504 Gateway Time-out</h1></center>
+</body>
+</html>
+* Connection #0 to host k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com:443 left intact
+[root@ip-10-0-3-116 manifest]# kubectl describe ingress learning-ingress -n learning-eks
+Name:             learning-ingress
+Labels:           <none>
+Namespace:        learning-eks
+Address:          k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com
+Ingress Class:    alb
+Default backend:  <default>
+Rules:
+  Host                    Path  Backends
+  ----                    ----  --------
+  node-app.eduupdate.net
+                          /   node-service:3000 (10.0.4.131:3000,10.0.3.70:3000)
+Annotations:              alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:165286508822:certificate/c9afb5ab-8b5f-413e-90fa-a8cd66ebc5e5
+                          alb.ingress.kubernetes.io/healthcheck-interval-seconds: 30
+                          alb.ingress.kubernetes.io/healthcheck-path: /
+                          alb.ingress.kubernetes.io/listen-ports: [{"HTTP":80},{"HTTPS":443}]
+                          alb.ingress.kubernetes.io/scheme: internet-facing
+                          alb.ingress.kubernetes.io/security-groups: sg-09e0d4273d00cfd22
+                          alb.ingress.kubernetes.io/ssl-redirect: 443
+                          alb.ingress.kubernetes.io/target-type: ip
+                          kubernetes.io/ingress.class: alb
+Events:
+  Type    Reason                  Age   From     Message
+  ----    ------                  ----  ----     -------
+  Normal  SuccessfullyReconciled  10m   ingress  Successfully reconciled
+[root@ip-10-0-3-116 manifest]# kubectl run curl-test \
+  --image=curlimages/curl \
+  --rm -it \
+  --restart=Never \
+  -n learning-eks -- sh
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+~ $ curl -v http://node-service:3000/
+* Host node-service:3000 was resolved.
+* IPv6: (none)
+* IPv4: 172.20.148.181
+*   Trying 172.20.148.181:3000...
+* Established connection to node-service (172.20.148.181 port 3000) from 10.0.4.252 port 41224
+* using HTTP/1.x
+> GET / HTTP/1.1
+> Host: node-service:3000
+> User-Agent: curl/8.20.0
+> Accept: */*
+>
+* Request completely sent off
+< HTTP/1.1 200 OK
+< X-Powered-By: Express
+< Content-Type: text/html; charset=utf-8
+< Content-Length: 11
+< ETag: W/"b-Ck1VqNd45QIvq3AZd8XYQLvEhtA"
+< Date: Sat, 30 May 2026 22:26:35 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+<
+* Connection #0 to host node-service:3000 left intact
+Hello World~ $ aws elbv2 describe-target-groups \
+>   --region ap-south-1 \
+>   --query 'TargetGroups[*].[TargetGroupName,TargetGroupArn]' \
+>   --output table
+sh: aws: not found
+~ $ q
+sh: q: not found
+~ $ exit
+Session ended, resume using 'kubectl attach curl-test -c curl-test -n learning-eks -i -t' command
+pod "curl-test" deleted from learning-eks namespace
+pod learning-eks/curl-test terminated (Error)
+[root@ip-10-0-3-116 manifest]# aws elbv2 describe-target-groups \
+  --region ap-south-1 \
+  --query 'TargetGroups[*].[TargetGroupName,TargetGroupArn]' \
+  --output table
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+|                                                                   DescribeTargetGroups                                                                   |
++----------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+|  k8s-learning-nodeserv-b2c37b7ebf|  arn:aws:elasticloadbalancing:ap-south-1:165286508822:targetgroup/k8s-learning-nodeserv-b2c37b7ebf/8ce958c16c6bc1c6   |
+|  learning-jenkins-tg             |  arn:aws:elasticloadbalancing:ap-south-1:165286508822:targetgroup/learning-jenkins-tg/5f605f0cf8ebed2d                |
++----------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+[root@ip-10-0-3-116 manifest]# aws elbv2 describe-target-health \
+  --target-group-arn arn:aws:elasticloadbalancing:ap-south-1:165286508822:targetgroup/k8s-learning-nodeserv-b2c37b7ebf/8ce958c16c6bc1c6 \
+  --region ap-south-1
+{
+    "TargetHealthDescriptions": [
+        {
+            "Target": {
+                "Id": "10.0.4.131",
+                "Port": 3000,
+                "AvailabilityZone": "ap-south-1b"
+            },
+            "HealthCheckPort": "3000",
+            "TargetHealth": {
+                "State": "unhealthy",
+                "Reason": "Target.Timeout",
+                "Description": "Request timed out"
+            },
+            "AdministrativeOverride": {
+                "State": "no_override",
+                "Reason": "AdministrativeOverride.NoOverride",
+                "Description": "No override is currently active on target"
+            }
+        },
+        {
+            "Target": {
+                "Id": "10.0.3.70",
+                "Port": 3000,
+                "AvailabilityZone": "ap-south-1a"
+            },
+            "HealthCheckPort": "3000",
+            "TargetHealth": {
+                "State": "unhealthy",
+                "Reason": "Target.Timeout",
+                "Description": "Request timed out"
+            },
+            "AdministrativeOverride": {
+                "State": "no_override",
+                "Reason": "AdministrativeOverride.NoOverride",
+                "Description": "No override is currently active on target"
+            }
+        }
+    ]
+}
+[root@ip-10-0-3-116 manifest]# aws ec2 describe-instances \
+  --filters "Name=private-ip-address,Values=10.0.4.168" \
+  --query 'Reservations[*].Instances[*].SecurityGroups[*].[GroupId,GroupName]' \
+  --output table
+--------------------------------------------------------------------
+|                         DescribeInstances                        |
++-----------------------+------------------------------------------+
+|  sg-0d9e9b2e3aa63f109 |  eks-cluster-sg-learning-eks-1440763554  |
++-----------------------+------------------------------------------+
+[root@ip-10-0-3-116 manifest]# aws ec2 describe-security-groups \
+  --group-ids sg-0d9e9b2e3aa63f109 \
+  --region ap-south-1
+{
+    "SecurityGroups": [
+        {
+            "GroupId": "sg-0d9e9b2e3aa63f109",
+            "IpPermissionsEgress": [
+                {
+                    "IpProtocol": "-1",
+                    "UserIdGroupPairs": [
+                        {
+                            "Description": "Allows EFA traffic, which is not matched by CIDR rules.",
+                            "UserId": "165286508822",
+                            "GroupId": "sg-0d9e9b2e3aa63f109"
+                        }
+                    ],
+                    "IpRanges": [
+                        {
+                            "CidrIp": "0.0.0.0/0"
+                        }
+                    ],
+                    "Ipv6Ranges": [],
+                    "PrefixListIds": []
+                }
+            ],
+            "Tags": [
+                {
+                    "Key": "Name",
+                    "Value": "eks-cluster-sg-learning-eks-1440763554"
+                },
+                {
+                    "Key": "kubernetes.io/cluster/learning-eks",
+                    "Value": "owned"
+                },
+                {
+                    "Key": "aws:eks:cluster-name",
+                    "Value": "learning-eks"
+                }
+            ],
+            "VpcId": "vpc-039ab55e648461156",
+            "SecurityGroupArn": "arn:aws:ec2:ap-south-1:165286508822:security-group/sg-0d9e9b2e3aa63f109",
+            "OwnerId": "165286508822",
+            "GroupName": "eks-cluster-sg-learning-eks-1440763554",
+            "Description": "EKS created security group applied to ENI that is attached to EKS Control Plane master nodes, as well as any managed workloads.",
+            "IpPermissions": [
+                {
+                    "IpProtocol": "-1",
+                    "UserIdGroupPairs": [
+                        {
+                            "Description": "Allows EFA traffic, which is not matched by CIDR rules.",
+                            "UserId": "165286508822",
+                            "GroupId": "sg-0d9e9b2e3aa63f109"
+                        }
+                    ],
+                    "IpRanges": [],
+                    "Ipv6Ranges": [],
+                    "PrefixListIds": []
+                }
+            ]
+        }
+    ]
+}
+[root@ip-10-0-3-116 manifest]# aws ec2 authorize-security-group-ingress \
+  --group-id sg-0d9e9b2e3aa63f109 \
+  --protocol tcp \
+  --port 3000 \
+  --source-group sg-09e0d4273d00cfd22 \
+  --region ap-south-1
+{
+    "Return": true,
+    "SecurityGroupRules": [
+        {
+            "SecurityGroupRuleId": "sgr-076d79837d30d7bd1",
+            "GroupId": "sg-0d9e9b2e3aa63f109",
+            "GroupOwnerId": "165286508822",
+            "IsEgress": false,
+            "IpProtocol": "tcp",
+            "FromPort": 3000,
+            "ToPort": 3000,
+            "ReferencedGroupInfo": {
+                "GroupId": "sg-09e0d4273d00cfd22",
+                "UserId": "165286508822"
+            },
+            "SecurityGroupRuleArn": "arn:aws:ec2:ap-south-1:165286508822:security-group-rule/sgr-076d79837d30d7bd1"
+        }
+    ]
+}
+[root@ip-10-0-3-116 manifest]# aws elbv2 describe-target-health \
+  --target-group-arn arn:aws:elasticloadbalancing:ap-south-1:165286508822:targetgroup/k8s-learning-nodeserv-b2c37b7ebf/8ce958c16c6bc1c6 \
+  --region ap-south-1
+{
+    "TargetHealthDescriptions": [
+        {
+            "Target": {
+                "Id": "10.0.4.131",
+                "Port": 3000,
+                "AvailabilityZone": "ap-south-1b"
+            },
+            "HealthCheckPort": "3000",
+            "TargetHealth": {
+                "State": "unhealthy",
+                "Reason": "Target.Timeout",
+                "Description": "Request timed out"
+            },
+            "AdministrativeOverride": {
+                "State": "no_override",
+                "Reason": "AdministrativeOverride.NoOverride",
+                "Description": "No override is currently active on target"
+            }
+        },
+        {
+            "Target": {
+                "Id": "10.0.3.70",
+                "Port": 3000,
+                "AvailabilityZone": "ap-south-1a"
+            },
+            "HealthCheckPort": "3000",
+            "TargetHealth": {
+                "State": "unhealthy",
+                "Reason": "Target.Timeout",
+                "Description": "Request timed out"
+            },
+            "AdministrativeOverride": {
+                "State": "no_override",
+                "Reason": "AdministrativeOverride.NoOverride",
+                "Description": "No override is currently active on target"
+            }
+        }
+    ]
+}
+[root@ip-10-0-3-116 manifest]# aws elbv2 describe-target-health   --target-group-arn arn:aws:elasticloadbalancing:ap-south-1:165286508822:targetgroup/k8s-learning-nodeserv-b2c37b7ebf/8ce958c16c6bc1c6   --regionap-south-1
+{
+    "TargetHealthDescriptions": [
+        {
+            "Target": {
+                "Id": "10.0.4.131",
+                "Port": 3000,
+                "AvailabilityZone": "ap-south-1b"
+            },
+            "HealthCheckPort": "3000",
+            "TargetHealth": {
+                "State": "unhealthy",
+                "Reason": "Target.Timeout",
+                "Description": "Request timed out"
+            },
+            "AdministrativeOverride": {
+                "State": "no_override",
+                "Reason": "AdministrativeOverride.NoOverride",
+                "Description": "No override is currently active on target"
+            }
+        },
+        {
+            "Target": {
+                "Id": "10.0.3.70",
+                "Port": 3000,
+                "AvailabilityZone": "ap-south-1a"
+            },
+            "HealthCheckPort": "3000",
+            "TargetHealth": {
+                "State": "unhealthy",
+                "Reason": "Target.Timeout",
+                "Description": "Request timed out"
+            },
+            "AdministrativeOverride": {
+                "State": "no_override",
+                "Reason": "AdministrativeOverride.NoOverride",
+                "Description": "No override is currently active on target"
+            }
+        }
+    ]
+}
+[root@ip-10-0-3-116 manifest]# aws elbv2 describe-target-health   --target-group-arn arn:aws:elasticloadbalancing:ap-south-1:165286508822:targetgroup/k8s-learning-nodeserv-b2c37b7ebf/8ce958c16c6bc1c6   --regionap-south-1
+{
+    "TargetHealthDescriptions": [
+        {
+            "Target": {
+                "Id": "10.0.4.131",
+                "Port": 3000,
+                "AvailabilityZone": "ap-south-1b"
+            },
+            "HealthCheckPort": "3000",
+            "TargetHealth": {
+                "State": "unhealthy",
+                "Reason": "Target.Timeout",
+                "Description": "Request timed out"
+            },
+            "AdministrativeOverride": {
+                "State": "no_override",
+                "Reason": "AdministrativeOverride.NoOverride",
+                "Description": "No override is currently active on target"
+            }
+        },
+        {
+            "Target": {
+                "Id": "10.0.3.70",
+                "Port": 3000,
+                "AvailabilityZone": "ap-south-1a"
+            },
+            "HealthCheckPort": "3000",
+            "TargetHealth": {
+                "State": "unhealthy",
+                "Reason": "Target.Timeout",
+                "Description": "Request timed out"
+            },
+            "AdministrativeOverride": {
+                "State": "no_override",
+                "Reason": "AdministrativeOverride.NoOverride",
+                "Description": "No override is currently active on target"
+            }
+        }
+    ]
+}
+[root@ip-10-0-3-116 manifest]# curl -vk \
+-H "Host: node-app.eduupdate.net" \
+https://k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com
+* Host k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com:443 was resolved.
+* IPv6: (none)
+* IPv4: 43.204.14.1, 3.111.15.206
+*   Trying 43.204.14.1:443...
+* ALPN: curl offers h2,http/1.1
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* SSL Trust: peer verification disabled
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / secp256r1 / rsaEncryption
+* ALPN: server accepted h2
+* Server certificate:
+*   subject: CN=*.eduupdate.net
+*   start date: May 25 00:00:00 2026 GMT
+*   expire date: Dec  8 23:59:59 2026 GMT
+*   issuer: C=US; O=Amazon; CN=Amazon RSA 2048 M04
+*   Certificate level 0: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 2: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+* SSL certificate OpenSSL verify result: unable to get local issuer certificate (20)
+*  SSL certificate verification failed, continuing anyway!
+* Established connection to k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com (43.204.14.1 port 443) from 10.0.3.116 port 35194
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com/
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: node-app.eduupdate.net]
+* [HTTP/2] [1] [:path: /]
+* [HTTP/2] [1] [user-agent: curl/8.17.0]
+* [HTTP/2] [1] [accept: */*]
+> GET / HTTP/2
+> Host: node-app.eduupdate.net
+> User-Agent: curl/8.17.0
+> Accept: */*
+>
+* Request completely sent off
+< HTTP/2 200
+< date: Sat, 30 May 2026 22:34:46 GMT
+< content-type: text/html; charset=utf-8
+< content-length: 11
+< x-powered-by: Express
+< etag: W/"b-Ck1VqNd45QIvq3AZd8XYQLvEhtA"
+<
+* Connection #0 to host k8s-learning-learning-3efca0e052-565822676.ap-south-1.elb.amazonaws.com:443 left intact
+Hello World[root@ip-10-0-3-116 manifest]# ls
+deployment.yaml  hpa.yaml  iam_policy.json  ingress.yaml  namespace.yaml  service.yaml
+[root@ip-10-0-3-116 manifest]# cat service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-service
+  namespace: learning-eks
+spec:
+  selector:
+    app: node
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+  type: ClusterIP
+[root@ip-10-0-3-116 manifest]# kubectl get pod -n learning-eks
+NAME                   READY   STATUS    RESTARTS   AGE
+node-d64bbb559-5g6r2   1/1     Running   0          17m
+node-d64bbb559-wdxn2   1/1     Running   0          17m
+[root@ip-10-0-3-116 manifest]# kubectl get nodes -n learning-eks
+NAME                                        STATUS   ROLES    AGE     VERSION
+ip-10-0-3-189.ap-south-1.compute.internal   Ready    <none>   3h35m   v1.34.8-eks-3385e9b
+ip-10-0-4-168.ap-south-1.compute.internal   Ready    <none>   3h35m   v1.34.8-eks-3385e9b
+[root@ip-10-0-3-116 manifest]# kubectl describe node-d64bbb559-5g6r2
+error: the server doesn't have a resource type "node-d64bbb559-5g6r2"
+[root@ip-10-0-3-116 manifest]# kubectl get pod -n learning-eks
+NAME                   READY   STATUS    RESTARTS   AGE
+node-d64bbb559-5g6r2   1/1     Running   0          19m
+node-d64bbb559-wdxn2   1/1     Running   0          19m
+[root@ip-10-0-3-116 manifest]# kubectl top pods
+No resources found in default namespace.
+[root@ip-10-0-3-116 manifest]# kubectl top pods -n learning-eks
+NAME                   CPU(cores)   MEMORY(bytes)
+node-d64bbb559-5g6r2   1m           13Mi
+node-d64bbb559-wdxn2   1m           13Mi
+[root@ip-10-0-3-116 manifest]# kubectl exec it node-d64bbb559-5g6r2 -- /bin/sh
+Error from server (NotFound): pods "it" not found
+[root@ip-10-0-3-116 manifest]# kubectl exec -it node-d64bbb559-5g6r2 -n learning-eks -- /bin/sh
+# ls
+Dockerfile  Jenkinsfile  README.md  node_modules  nodejsapp.yaml  package-lock.json  package.json  server.js
+# exit;
+[root@ip-10-0-3-116 manifest]# kubectl describe  node-d64bbb559-5g6r2 -n learning-eks
+error: the server doesn't have a resource type "node-d64bbb559-5g6r2"
+[root@ip-10-0-3-116 manifest]# kubectl describe node node-d64bbb559-5g6r2 -n learning-eks
+Error from server (NotFound): nodes "node-d64bbb559-5g6r2" not found
+[root@ip-10-0-3-116 manifest]# kubectl describe pod node-d64bbb559-5g6r2 -n learning-eks
+Name:             node-d64bbb559-5g6r2
+Namespace:        learning-eks
+Priority:         0
+Service Account:  default
+Node:             ip-10-0-4-168.ap-south-1.compute.internal/10.0.4.168
+Start Time:       Sat, 30 May 2026 22:36:32 +0000
+Labels:           app=node
+                  pod-template-hash=d64bbb559
+Annotations:      kubectl.kubernetes.io/restartedAt: 2026-05-30T22:36:32Z
+Status:           Running
+IP:               10.0.4.11
+IPs:
+  IP:           10.0.4.11
+Controlled By:  ReplicaSet/node-d64bbb559
+Containers:
+  node-app:
+    Container ID:   containerd://4edeed6f4d7dfc1a0e24cc0810a842ef35c2627225dd1fdaa1b659226bc70bc8
+    Image:          165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest
+    Image ID:       165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node@sha256:e9dc4fd494f1b0b1afa3c275c29cc8fcca76c2448c6243a24beca1dfd480a832
+    Port:           3000/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Sat, 30 May 2026 22:36:32 +0000
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     300m
+      memory:  256Mi
+    Requests:
+      cpu:        100m
+      memory:     128Mi
+    Liveness:     http-get http://:3000/ delay=30s timeout=2s period=10s #success=1 #failure=3
+    Readiness:    http-get http://:3000/ delay=10s timeout=2s period=5s #success=1 #failure=3
+    Environment:  <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-9sqn5 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       True
+  ContainersReady             True
+  PodScheduled                True
+Volumes:
+  kube-api-access-9sqn5:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  24m   default-scheduler  Successfully assigned learning-eks/node-d64bbb559-5g6r2 to ip-10-0-4-168.ap-south-1.compute.internal
+  Normal  Pulling    24m   kubelet            spec.containers{node-app}: Pulling image "165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest"
+  Normal  Pulled     24m   kubelet            spec.containers{node-app}: Successfully pulled image "165286508822.dkr.ecr.ap-south-1.amazonaws.com/learning-eks-node:latest" in 104ms (104ms including waiting). Image size: 351764415 bytes.
+  Normal  Created    24m   kubelet            spec.containers{node-app}: Created container: node-app
+  Normal  Started    24m   kubelet            spec.containers{node-app}: Started container node-app
+[root@ip-10-0-3-116 manifest]# kubectl top pods -n learning-eks
+NAME                   CPU(cores)   MEMORY(bytes)
+node-d64bbb559-5g6r2   1m           15Mi
+node-d64bbb559-wdxn2   1m           14Mi
+[root@ip-10-0-3-116 manifest]#
